@@ -380,7 +380,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 const { PDFDocument, degrees, rgb, StandardFonts, BlendMode } = PDFLib;
 
 /* ════════ state ════════ */
-const S = { docs: [], active: "start", tool: "hand", sel: null /* {docId,pageIdx,aid} */, pendingImg: null };
+const S = { docs: [], active: "start", tool: "hand", sel: null /* {docId,pageIdx,ids:Set} */, pendingImg: null, clip: [] };
 let uid = 0, aid = 0, gid = 0;
 const $  = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -448,6 +448,23 @@ function expandToGroups(pg, idSet){
   if(grps.size) pg.annots.forEach(a=>{ if(a.grp && grps.has(a.grp)) idSet.add(a.id); });
   return idSet;
 }
+function pasteClip(){
+  const d=activeDoc(); if(!d || !S.clip || !S.clip.length) return;
+  const idx=d.sel, pg=d.pages[idx];
+  const grpMap=new Map(), newIds=[], off=12;
+  S.clip.forEach(srcA=>{
+    const a=JSON.parse(JSON.stringify(srcA)); a.id=++aid;
+    if(a.grp!==undefined){ if(!grpMap.has(a.grp)) grpMap.set(a.grp, ++gid); a.grp=grpMap.get(a.grp); }
+    if(a.x1!==undefined){ a.x1+=off; a.y1+=off; a.x2+=off; a.y2+=off; }
+    else if(a.pts){ a.pts=a.pts.map(([x,y])=>[x+off,y+off]); }
+    else { if(a.x!==undefined) a.x+=off; if(a.y!==undefined) a.y+=off; }
+    pg.annots.push(a); newIds.push(a.id);
+  });
+  S.sel={docId:d.id, pageIdx:idx, ids:new Set(newIds)};
+  if(S.tool!=="select") setTool("select");
+  refreshOverlay(d, idx);
+  toast(`Pasted ${newIds.length} item${newIds.length>1?"s":""} onto page ${idx+1}.`);
+}
 
 /* ════════ opening files ════════ */
 async function loadSource(bytes){
@@ -496,6 +513,23 @@ document.addEventListener("keydown", e => {
     if(sc && S.sel.ids.size){ e.preventDefault();
       let n=0; selAnnots().forEach(a=>{ if(a.grp){ delete a.grp; n++; } });
       refreshOverlay(sc.doc, sc.idx); toast(n?`Ungrouped ${n} item${n>1?"s":""}.`:"Nothing grouped in the selection."); }
+  }
+  if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="c" && !e.shiftKey && !typing && S.tool==="select"){
+    const sc=selScope();
+    if(sc && S.sel.ids.size){ e.preventDefault();
+      S.clip=selAnnots().map(a=>JSON.parse(JSON.stringify(a)));
+      toast(`Copied ${S.clip.length} item${S.clip.length>1?"s":""} — Ctrl+V to paste.`); }
+  }
+  if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="x" && !typing && S.tool==="select"){
+    const sc=selScope();
+    if(sc && S.sel.ids.size){ e.preventDefault();
+      S.clip=selAnnots().map(a=>JSON.parse(JSON.stringify(a)));
+      const n=S.sel.ids.size; sc.pg.annots=sc.pg.annots.filter(a=>!S.sel.ids.has(a.id));
+      const d=sc.doc, di=sc.idx; S.sel=null; refreshOverlay(d, di);
+      toast(`Cut ${n} item${n>1?"s":""} — Ctrl+V to paste.`); }
+  }
+  if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="v" && !typing){
+    if(S.clip && S.clip.length){ e.preventDefault(); pasteClip(); }
   }
   if ((e.key==="Delete"||e.key==="Backspace") && S.sel && !typing){
     const sc = selScope();
