@@ -279,8 +279,15 @@
       <button class="togg" id="fBold" title="Bold"><b>B</b></button>
       <button class="togg" id="fItal" title="Italic"><i>I</i></button>
       <input type="number" id="fStroke" value="2" min="1" max="12" style="width:50px" title="Shape stroke width">
+      <select id="fLine" title="Line spacing for multi-line text" style="width:78px">
+        <option value="1">1.0 ✕</option>
+        <option value="1.15" selected>1.15 ✕</option>
+        <option value="1.3">1.3 ✕</option>
+        <option value="1.5">1.5 ✕</option>
+        <option value="2">2.0 ✕</option>
+      </select>
     </div>
-  </div></div><div class="glabel">Font &amp; Stroke</div></div>
+  </div></div><div class="glabel">Font &amp; Spacing</div></div>
 </div>
 
 <div class="ribbon" id="rib-organize" style="display:none">
@@ -396,16 +403,16 @@ const hex2rgb = h => { const n=parseInt(h.slice(1),16); return [ (n>>16&255)/255
 const fontState = () => ({
   fam: $("#fFam").value, size: +$("#fSize").value || 14, color: $("#fColor").value,
   bold: $("#fBold").classList.contains("on"), ital: $("#fItal").classList.contains("on"),
-  sw: +$("#fStroke").value || 2
+  sw: +$("#fStroke").value || 2, lh: +$("#fLine").value || 1.15
 });
 $("#fBold").onclick = e => { e.currentTarget.classList.toggle("on"); applyFontToSel(); };
 $("#fItal").onclick = e => { e.currentTarget.classList.toggle("on"); applyFontToSel(); };
-["fFam","fSize","fColor","fStroke"].forEach(id => $("#"+id).addEventListener("change", applyFontToSel));
+["fFam","fSize","fColor","fStroke","fLine"].forEach(id => $("#"+id).addEventListener("change", applyFontToSel));
 function applyFontToSel(){
   const sc=selScope(); if(!sc) return;
   const f = fontState(); let changed=false;
   selAnnots().forEach(a=>{
-    if (a.t === "text"){ Object.assign(a, { fam:f.fam, size:f.size, color:f.color, bold:f.bold, ital:f.ital }); changed=true; }
+    if (a.t === "text"){ Object.assign(a, { fam:f.fam, size:f.size, color:f.color, bold:f.bold, ital:f.ital, lh:f.lh }); changed=true; }
     else if (["rect","ellipse","line","arrow","ink"].includes(a.t)){ a.stroke = f.color; a.sw = f.sw; changed=true; }
     else if (a.t === "hl"){ a.color = f.color; changed=true; }
   });
@@ -901,6 +908,7 @@ function renderAnnots(doc, idx, ov){
       el.style.fontSize=a.size*z+"px";
       el.style.fontFamily=a.fam==="Times"?"Georgia, 'Times New Roman', serif":a.fam==="Courier"?"'Courier New', monospace":"Helvetica, Arial, sans-serif";
       el.style.color=a.color; el.style.fontWeight=a.bold?"700":"400"; el.style.fontStyle=a.ital?"italic":"normal";
+      el.style.lineHeight=(a.lh||1.15);
       if(a.box) el.style.border=`${Math.max(1,1.2*z)}px solid ${a.color}`, el.style.padding=2*z+"px";
       el.textContent=a.text;
     } else if (a.t==="whiteout"){
@@ -1000,7 +1008,8 @@ function bindAnnotEvents(doc, idx, a, el){
 }
 function syncFontUI(a){
   if (a.t==="text"){ $("#fFam").value=a.fam; $("#fSize").value=a.size; $("#fColor").value=a.color;
-    $("#fBold").classList.toggle("on",!!a.bold); $("#fItal").classList.toggle("on",!!a.ital); }
+    $("#fBold").classList.toggle("on",!!a.bold); $("#fItal").classList.toggle("on",!!a.ital);
+    $("#fLine").value=String(a.lh||1.15); }
   else if (a.stroke){ $("#fColor").value=a.stroke; $("#fStroke").value=a.sw; }
 }
 function bindResize(doc, idx, a, handle){
@@ -1057,7 +1066,7 @@ function bindOverlay(doc, idx, ov){
     if (S.tool==="text"||S.tool==="textbox"){
       e.preventDefault();
       const a={ id:++aid, t:"text", x, y:y-f.size*0.8, text:"", size:f.size, fam:f.fam, color:f.color,
-        bold:f.bold, ital:f.ital, box:S.tool==="textbox" };
+        bold:f.bold, ital:f.ital, lh:f.lh, box:S.tool==="textbox" };
       pg.annots.push(a); refreshOverlay(doc, idx);
       const el=ov.querySelector(`.ann[data-aid="${a.id}"]`);
       if(el) editTextAnnot(doc, idx, a, el);
@@ -1539,16 +1548,17 @@ async function drawAnnotsOnPage(out, page, doc, pg, fonts){
       if(a.t==="text"){
         const font=pickFont(fonts,a.fam,a.bold,a.ital);
         const [r,g,b]=hex2rgb(a.color);
+        const lh=a.lh||1.15;
         const lines=(a.text||"").split("\n");
         lines.forEach((ln,li)=>{
           if(!ln) return;
-          const baseDisp=[a.x, a.y + a.size*0.82 + li*a.size*1.25];
+          const baseDisp=[a.x, a.y + a.size*0.82 + li*a.size*lh];
           const [bx,by]=ptMap(R,pw,ph,baseDisp[0],baseDisp[1]);
           page.drawText(ln,{x:bx,y:by,size:a.size,font,color:rgb(r,g,b),rotate:degrees(R)});
         });
         if(a.box){
           const wEst=Math.max(...lines.map(l=>l.length))*a.size*0.55+8;
-          const hEst=lines.length*a.size*1.25+6;
+          const hEst=lines.length*a.size*lh+6;
           const [x,y,w,h]=rcMap(R,pw,ph,a.x-3,a.y-3,wEst,hEst);
           page.drawRectangle({x,y,width:w,height:h,borderColor:rgb(r,g,b),borderWidth:1.2});
         }
