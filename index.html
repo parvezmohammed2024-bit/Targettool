@@ -257,6 +257,7 @@
   <div class="rgroup"><div class="tools">
     <button class="rbtn tool vdep" data-tool="editText"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16zM13.5 6.5l4 4"/></svg><span>Edit Text</span></button>
     <button class="rbtn tool vdep" data-tool="whiteout" title="Drag to cover content with white"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="9" rx="1"/><path d="M4 20h16"/></svg><span>Whiteout</span></button>
+    <button class="rbtn vdep" data-act="tighten" title="Remove blank lines from selected text"><svg viewBox="0 0 24 24"><path d="M5 6h14M5 18h14M8 10l4-3 4 3M8 14l4 3 4-3"/></svg><span>Tighten</span></button>
   </div><div class="glabel">Edit Content</div></div>
   <div class="rgroup"><div class="tools">
     <button class="rbtn tool vdep" data-tool="text"><svg viewBox="0 0 24 24"><path d="M5 5h14M12 5v14"/></svg><span>Add Text</span></button>
@@ -280,6 +281,7 @@
       <button class="togg" id="fItal" title="Italic"><i>I</i></button>
       <input type="number" id="fStroke" value="2" min="1" max="12" style="width:50px" title="Shape stroke width">
       <select id="fLine" title="Line spacing for multi-line text" style="width:78px">
+        <option value="0.85">0.85 ✕</option>
         <option value="1">1.0 ✕</option>
         <option value="1.15" selected>1.15 ✕</option>
         <option value="1.3">1.3 ✕</option>
@@ -1022,10 +1024,17 @@ function bindResize(doc, idx, a, handle){
     window.addEventListener("mousemove",mm); window.addEventListener("mouseup",mu);
   });
 }
+function normalizeLines(s){
+  return (s||"")
+    .replace(/\r/g,"")
+    .replace(/[ \t]+\n/g,"\n")   // trailing spaces on a line
+    .replace(/\n{2,}/g,"\n")      // collapse blank lines between paragraphs
+    .replace(/^\n+|\n+$/g,"");    // trim leading/trailing blank lines
+}
 function editTextAnnot(doc, idx, a, el){
   el.contentEditable="true"; el.classList.add("editing");
   const done=()=>{ el.contentEditable="false"; el.classList.remove("editing");
-    a.text=el.innerText;
+    a.text=normalizeLines(el.innerText);
     if(!a.text.trim()){ doc.pages[idx].annots=doc.pages[idx].annots.filter(x=>x.id!==a.id); }
     refreshOverlay(doc, idx); el.removeEventListener("blur",done); };
   // Defer focus to the next tick: if this was triggered from a mousedown,
@@ -1218,6 +1227,14 @@ const ACT = {
   extract: extractPage, save: saveDoc, mergeAll: mergeAll,
   exportPNG: ()=>exportPage("png"), exportJPG: ()=>exportPage("jpeg"),
   exportAll: exportAllPages, wordCount: wordCount,
+  tighten: ()=>{
+    const sc=selScope();
+    if(!sc || !S.sel.ids.size){ toast("Select the text first (Select tool), then Tighten."); return; }
+    let n=0;
+    selAnnots().forEach(a=>{ if(a.t==="text"){ const before=a.text; a.text=normalizeLines(a.text); if(a.text!==before) n++; } });
+    refreshOverlay(sc.doc, sc.idx);
+    toast(n?`Removed blank lines from ${n} text block${n>1?"s":""}.`:"No blank lines to remove.");
+  },
   watermark: wmDialog, headfoot: hfDialog, bates: batesDialog,
   ocrInfo: ()=>toast("OCR needs a text-recognition engine that can't load in this sandbox — it ships with the server-assisted version (free Tesseract)."),
   officeInfo: ()=>toast("PDF → Word/Excel needs server-side conversion (free LibreOffice). Coming with the server build — everything else here stays client-side."),
