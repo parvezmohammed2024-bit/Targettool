@@ -21,6 +21,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400;1,700&family=Open+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,700;1,400;1,700&family=Poppins:ital,wght@0,400;0,700;1,400;1,700&family=Nunito:ital,wght@0,400;0,700;1,400;1,700&family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Oswald:wght@400;700&family=Source+Code+Pro:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 <style>
   :root{
     --chrome:#232530; --chrome-2:#2b2d3a; --chrome-3:#343748;
@@ -274,7 +278,7 @@
   </div><div class="glabel">Shapes</div></div>
   <div class="rgroup"><div class="tools"><div class="fontbox">
     <div class="fontrow">
-      <select id="fFam"><optgroup label="Sans-serif"><option value="Helvetica">Helvetica / Arial</option></optgroup><optgroup label="Serif"><option value="Times">Times</option></optgroup><optgroup label="Monospace"><option value="Courier">Courier</option></optgroup></select>
+      <select id="fFam"><optgroup label="Sans-serif"><option value="Helvetica">Helvetica / Arial</option><option value="Roboto">Roboto</option><option value="Open Sans">Open Sans</option><option value="Lato">Lato</option><option value="Montserrat">Montserrat</option><option value="Poppins">Poppins</option><option value="Nunito">Nunito</option><option value="Oswald">Oswald</option></optgroup><optgroup label="Serif"><option value="Times">Times</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></optgroup><optgroup label="Monospace"><option value="Courier">Courier</option><option value="Source Code Pro">Source Code Pro</option></optgroup></select>
       <input type="number" id="fSize" value="14" min="6" max="120" style="width:58px" title="Font size">
     </div>
     <div class="fontrow">
@@ -405,6 +409,28 @@ const esc = s => s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':
 const hex2rgb = h => { const n=parseInt(h.slice(1),16); return [ (n>>16&255)/255, (n>>8&255)/255, (n&255)/255 ]; };
 
 /* font defaults from ribbon */
+const CUSTOM_FONTS = {
+  "Roboto":{css:"Roboto", gen:"sans-serif", pkg:"roboto", ital:true},
+  "Open Sans":{css:"'Open Sans'", gen:"sans-serif", pkg:"open-sans", ital:true},
+  "Lato":{css:"Lato", gen:"sans-serif", pkg:"lato", ital:true},
+  "Montserrat":{css:"Montserrat", gen:"sans-serif", pkg:"montserrat", ital:true},
+  "Poppins":{css:"Poppins", gen:"sans-serif", pkg:"poppins", ital:true},
+  "Nunito":{css:"Nunito", gen:"sans-serif", pkg:"nunito", ital:true},
+  "Merriweather":{css:"Merriweather", gen:"serif", pkg:"merriweather", ital:true},
+  "Playfair Display":{css:"'Playfair Display'", gen:"serif", pkg:"playfair-display", ital:true},
+  "Oswald":{css:"Oswald", gen:"sans-serif", pkg:"oswald", ital:false},
+  "Source Code Pro":{css:"'Source Code Pro'", gen:"monospace", pkg:"source-code-pro", ital:true}
+};
+function cssFontFamily(fam){
+  if(fam==="Times") return "Georgia, 'Times New Roman', serif";
+  if(fam==="Courier") return "'Courier New', monospace";
+  const d=CUSTOM_FONTS[fam];
+  if(d) return d.css+", "+d.gen;
+  return "Helvetica, Arial, sans-serif";
+}
+let _fontWarned=false;
+function warnFontOnce(fam){ if(!_fontWarned){ _fontWarned=true;
+  toast(`“${fam}” couldn’t be embedded — the PDF used a standard font instead (check your connection).`); } }
 const fontState = () => ({
   fam: $("#fFam").value, size: +$("#fSize").value || 14, color: $("#fColor").value,
   bold: $("#fBold").classList.contains("on"), ital: $("#fItal").classList.contains("on"),
@@ -911,7 +937,7 @@ function renderAnnots(doc, idx, ov){
       el.classList.add("txt");
       el.style.left=px(a.x); el.style.top=px(a.y);
       el.style.fontSize=a.size*z+"px";
-      el.style.fontFamily=a.fam==="Times"?"Georgia, 'Times New Roman', serif":a.fam==="Courier"?"'Courier New', monospace":"Helvetica, Arial, sans-serif";
+      el.style.fontFamily=cssFontFamily(a.fam);
       el.style.color=a.color; el.style.fontWeight=a.bold?"700":"400"; el.style.fontStyle=a.ital?"italic":"normal";
       el.style.lineHeight=(a.lh||1.15);
       if(a.box) el.style.border=`${Math.max(1,1.2*z)}px solid ${a.color}`, el.style.padding=2*z+"px";
@@ -1626,7 +1652,7 @@ async function drawAnnotsOnPage(out, page, doc, pg, fonts){
         const [x,y,w,h]=rcMap(R,pw,ph,a.x,a.y,a.w,a.h);
         page.drawImage(img,{x,y,width:w,height:h}); continue; }
       if(a.t==="text"){
-        const font=pickFont(fonts,a.fam,a.bold,a.ital);
+        const font=await fonts.get(a.fam,a.bold,a.ital);
         const [r,g,b]=hex2rgb(a.color);
         const lh=a.lh||1.15;
         const lines=(a.text||"").split("\n");
@@ -1689,6 +1715,25 @@ async function embedFonts(out){
     Courier:F.Courier, CourierB:F.CourierBold, CourierI:F.CourierOblique, CourierBI:F.CourierBoldOblique };
   const fonts={};
   for(const k in list) fonts[k]=await out.embedFont(list[k]);
+  // fontkit enables embedding custom (non-standard) fonts
+  let fkReady=false;
+  try{ if(typeof fontkit!=="undefined"){ out.registerFontkit(fontkit); fkReady=true; } }catch(_){}
+  const cache={};
+  fonts.get = async (fam,bold,ital)=>{
+    const def=CUSTOM_FONTS[fam];
+    if(!def) return pickFont(fonts, fam, bold, ital);   // standard 3 families
+    if(!fkReady){ warnFontOnce(fam); return pickFont(fonts,"Helvetica",bold,ital); }
+    const weight = bold ? "700" : "400";
+    const style  = (ital && def.ital) ? "italic" : "normal";
+    const key = def.pkg+weight+style;
+    if(cache[key]) return cache[key];
+    try{
+      const url=`https://cdn.jsdelivr.net/npm/@fontsource/${def.pkg}/files/${def.pkg}-latin-${weight}-${style}.woff`;
+      const bytes=await fetch(url).then(r=>{ if(!r.ok) throw new Error("http "+r.status); return r.arrayBuffer(); });
+      const f=await out.embedFont(bytes,{subset:true});
+      cache[key]=f; return f;
+    }catch(e){ console.warn("font embed failed:", fam, e); warnFontOnce(fam); return pickFont(fonts,"Helvetica",bold,ital); }
+  };
   return fonts;
 }
 async function saveDoc(){
@@ -1737,8 +1782,8 @@ async function saveAll(){
       const out=await PDFDocument.create();
       const fonts=await embedFonts(out);
       await buildOutput(out,d,fonts);
-      let name=d.name.replace(/\.pdf$/i,"")+"-edited.pdf";
-      if(used[name]){ used[name]++; name=name.replace(/\.pdf$/i,"")+"-"+used[name]+".pdf"; } else used[name]=1;
+      let name=d.name.replace(/\.pdf$/i,"")+".pdf";
+      if(used[name]){ used[name]++; name=name.replace(/\.pdf$/i,"")+" ("+used[name]+").pdf"; } else used[name]=1;
       zip.file(name, await out.save());
     }
     const blob=await zip.generateAsync({type:"blob"});
