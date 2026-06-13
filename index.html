@@ -122,7 +122,7 @@
   .overlay[data-cursor="cross"]{cursor:crosshair;}
   .overlay[data-cursor="text"]{cursor:text;}
   .ann{position:absolute;}
-  .ann.txt{white-space:pre-wrap; line-height:1.25; min-width:8px; min-height:1em; outline:none;}
+  .ann.txt{white-space:pre-wrap; line-height:1.15; min-width:8px; min-height:1em; outline:none;}
   .ann.txt.editing{outline:1.5px dashed var(--accent); background:rgba(123,108,255,.06);}
   .ann.selbox{outline:1.5px solid var(--accent) !important;}
   .ann .rsz{position:absolute; right:-6px; bottom:-6px; width:11px; height:11px; background:var(--accent); border:2px solid #fff; border-radius:3px; cursor:nwse-resize;}
@@ -270,7 +270,7 @@
   </div><div class="glabel">Shapes</div></div>
   <div class="rgroup"><div class="tools"><div class="fontbox">
     <div class="fontrow">
-      <select id="fFam"><option value="Helvetica">Helvetica</option><option value="Times">Times</option><option value="Courier">Courier</option></select>
+      <select id="fFam"><optgroup label="Sans-serif"><option value="Helvetica">Helvetica / Arial</option></optgroup><optgroup label="Serif"><option value="Times">Times</option></optgroup><optgroup label="Monospace"><option value="Courier">Courier</option></optgroup></select>
       <input type="number" id="fSize" value="14" min="6" max="120" style="width:58px" title="Font size">
     </div>
     <div class="fontrow">
@@ -401,19 +401,44 @@ $("#fBold").onclick = e => { e.currentTarget.classList.toggle("on"); applyFontTo
 $("#fItal").onclick = e => { e.currentTarget.classList.toggle("on"); applyFontToSel(); };
 ["fFam","fSize","fColor","fStroke"].forEach(id => $("#"+id).addEventListener("change", applyFontToSel));
 function applyFontToSel(){
-  const sel = getSelAnnot(); if (!sel) return;
-  const f = fontState(); const a = sel.annot;
-  if (a.t === "text"){ Object.assign(a, { fam:f.fam, size:f.size, color:f.color, bold:f.bold, ital:f.ital }); }
-  else if (["rect","ellipse","line","arrow","ink"].includes(a.t)){ a.stroke = f.color; a.sw = f.sw; }
-  else if (a.t === "hl"){ a.color = f.color; }
-  refreshOverlay(sel.doc, sel.idx);
+  const sc=selScope(); if(!sc) return;
+  const f = fontState(); let changed=false;
+  selAnnots().forEach(a=>{
+    if (a.t === "text"){ Object.assign(a, { fam:f.fam, size:f.size, color:f.color, bold:f.bold, ital:f.ital }); changed=true; }
+    else if (["rect","ellipse","line","arrow","ink"].includes(a.t)){ a.stroke = f.color; a.sw = f.sw; changed=true; }
+    else if (a.t === "hl"){ a.color = f.color; changed=true; }
+  });
+  if(changed) refreshOverlay(sc.doc, sc.idx);
 }
-function getSelAnnot(){
+function selScope(){
   if (!S.sel) return null;
   const doc = S.docs.find(d=>d.id===S.sel.docId); if (!doc) return null;
   const pg = doc.pages[S.sel.pageIdx]; if (!pg) return null;
-  const annot = pg.annots.find(a=>a.id===S.sel.aid); if (!annot) return null;
-  return { doc, idx: S.sel.pageIdx, page: pg, annot };
+  return { doc, idx:S.sel.pageIdx, pg };
+}
+function selAnnots(){
+  const sc=selScope(); if(!sc) return [];
+  return [...S.sel.ids].map(id=>sc.pg.annots.find(a=>a.id===id)).filter(Boolean);
+}
+function getSelAnnot(){
+  const sc=selScope(); if(!sc) return null;
+  const a=selAnnots()[0]; if(!a) return null;
+  return { doc:sc.doc, idx:sc.idx, page:sc.pg, annot:a };
+}
+function annotBBox(a){
+  if(a.w!==undefined && a.h!==undefined) return [a.x,a.y,a.w,a.h];
+  if(a.x1!==undefined){ const x=Math.min(a.x1,a.x2), y=Math.min(a.y1,a.y2);
+    return [x,y,Math.abs(a.x2-a.x1)||4,Math.abs(a.y2-a.y1)||4]; }
+  if(a.pts&&a.pts.length){ const xs=a.pts.map(p=>p[0]), ys=a.pts.map(p=>p[1]);
+    const x=Math.min(...xs), y=Math.min(...ys); return [x,y,(Math.max(...xs)-x)||4,(Math.max(...ys)-y)||4]; }
+  if(a.t==="text"){ const lines=(a.text||" ").split("\n");
+    const w=Math.max(1,...lines.map(l=>l.length))*a.size*0.55; const h=lines.length*a.size*1.2;
+    return [a.x,a.y,w,h]; }
+  return [a.x||0,a.y||0,8,8];
+}
+function annotInRect(a,bx,by,bw,bh){
+  const [x,y,w,h]=annotBBox(a);
+  return x < bx+bw && x+w > bx && y < by+bh && y+h > by;
 }
 
 /* ════════ opening files ════════ */
@@ -441,11 +466,22 @@ async function openFiles(fileList){
 }
 $("#filePick").onchange = e => { openFiles(e.target.files); e.target.value=""; };
 document.addEventListener("keydown", e => {
+  const typing = document.activeElement?.isContentEditable
+    || ["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName);
   if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="o"){ e.preventDefault(); $("#filePick").click(); }
-  if ((e.key==="Delete"||e.key==="Backspace") && S.sel && !document.activeElement?.isContentEditable
-      && !["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName)){
-    const sel = getSelAnnot();
-    if (sel){ sel.page.annots = sel.page.annots.filter(a=>a.id!==sel.annot.id); S.sel=null; refreshOverlay(sel.doc, sel.idx); }
+  if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="a" && S.tool==="select" && !typing){
+    const d=activeDoc();
+    if(d){ const idx=d.sel, pg=d.pages[idx];
+      if(pg && pg.annots.length){ e.preventDefault();
+        S.sel={docId:d.id, pageIdx:idx, ids:new Set(pg.annots.map(a=>a.id))};
+        refreshOverlay(d, idx); toast(`Selected all ${pg.annots.length} items on this page.`); } }
+  }
+  if ((e.key==="Delete"||e.key==="Backspace") && S.sel && !typing){
+    const sc = selScope();
+    if (sc && S.sel.ids.size){ const n=S.sel.ids.size;
+      sc.pg.annots = sc.pg.annots.filter(a=>!S.sel.ids.has(a.id));
+      const d=sc.doc, di=sc.idx; S.sel=null; refreshOverlay(d, di);
+      toast(`Deleted ${n} item${n>1?"s":""}.`); }
   }
 });
 
@@ -788,7 +824,7 @@ function renderAnnots(doc, idx, ov){
   svg.appendChild(defs); ov.appendChild(svg);
 
   pg.annots.forEach(a=>{
-    const seld = S.sel && S.sel.docId===doc.id && S.sel.pageIdx===idx && S.sel.aid===a.id;
+    const seld = S.sel && S.sel.docId===doc.id && S.sel.pageIdx===idx && S.sel.ids.has(a.id);
     if (["ink","line","arrow"].includes(a.t)){
       const el=document.createElementNS(svgNS, a.t==="ink"?"polyline":"line");
       if(a.t==="ink"){ el.setAttribute("points", a.pts.map(p=>p.join(",")).join(" ")); el.setAttribute("fill","none"); }
@@ -827,7 +863,7 @@ function renderAnnots(doc, idx, ov){
       const im=document.createElement("img"); im.src=a.dataUrl; im.style.width="100%"; im.style.height="100%";
       im.draggable=false; el.appendChild(im);
     }
-    if (seld && ["whiteout","hl","rect","ellipse","img"].includes(a.t)){
+    if (seld && S.sel.ids.size===1 && ["whiteout","hl","rect","ellipse","img"].includes(a.t)){
       const h=document.createElement("div"); h.className="rsz"; el.appendChild(h);
       bindResize(doc, idx, a, h);
     }
@@ -874,21 +910,28 @@ function bindAnnotEvents(doc, idx, a, el){
   el.addEventListener("mousedown", e=>{
     if (S.tool==="eraser"){ e.stopPropagation();
       doc.pages[idx].annots = doc.pages[idx].annots.filter(x=>x.id!==a.id);
-      if(S.sel?.aid===a.id) S.sel=null;
+      if(S.sel&&S.sel.ids) S.sel.ids.delete(a.id);
       refreshOverlay(doc, idx); return;
     }
     if (S.tool!=="select") return;
     e.stopPropagation();
-    S.sel={docId:doc.id, pageIdx:idx, aid:a.id};
+    const additive = e.shiftKey||e.ctrlKey||e.metaKey;
+    if(!S.sel || S.sel.docId!==doc.id || S.sel.pageIdx!==idx) S.sel={docId:doc.id, pageIdx:idx, ids:new Set()};
+    if(additive){ if(S.sel.ids.has(a.id)) S.sel.ids.delete(a.id); else S.sel.ids.add(a.id); }
+    else if(!S.sel.ids.has(a.id)){ S.sel.ids=new Set([a.id]); }
     syncFontUI(a);
     refreshOverlay(doc, idx);
-    if (a.t==="ink") return;
-    // drag-move
+    if(!S.sel.ids.has(a.id)) return; // just deselected
+    // group drag-move: move every selected annotation together
     const z=doc.zoom, sx=e.clientX, sy=e.clientY;
-    const orig = a.x1!==undefined ? {x1:a.x1,y1:a.y1,x2:a.x2,y2:a.y2} : {x:a.x,y:a.y};
+    const origs=selAnnots().map(m=> m.x1!==undefined ? {a:m,x1:m.x1,y1:m.y1,x2:m.x2,y2:m.y2}
+      : m.pts ? {a:m,pts:m.pts.map(p=>p.slice())} : {a:m,x:m.x,y:m.y});
     const mm=ev=>{ const dx=(ev.clientX-sx)/z, dy=(ev.clientY-sy)/z;
-      if(a.x1!==undefined){ a.x1=orig.x1+dx; a.y1=orig.y1+dy; a.x2=orig.x2+dx; a.y2=orig.y2+dy; }
-      else { a.x=orig.x+dx; a.y=orig.y+dy; }
+      origs.forEach(o=>{
+        if(o.x1!==undefined){ o.a.x1=o.x1+dx; o.a.y1=o.y1+dy; o.a.x2=o.x2+dx; o.a.y2=o.y2+dy; }
+        else if(o.pts){ o.a.pts=o.pts.map(([px,py])=>[px+dx,py+dy]); }
+        else { o.a.x=o.x+dx; o.a.y=o.y+dy; }
+      });
       refreshOverlay(doc, idx); };
     const mu=()=>{ window.removeEventListener("mousemove",mm); window.removeEventListener("mouseup",mu); };
     window.addEventListener("mousemove",mm); window.addEventListener("mouseup",mu);
@@ -936,11 +979,25 @@ function bindOverlay(doc, idx, ov){
     selectPage(doc, idx, false);
     const f=fontState();
 
-    if (S.tool==="select"){ S.sel=null; refreshOverlay(doc, idx); return; }
+    if (S.tool==="select"){
+      const additive=e.shiftKey||e.ctrlKey||e.metaKey;
+      if(!additive){ S.sel=null; refreshOverlay(doc, idx); }
+      dragBox(ov, z, x, y, (bx,by,bw,bh)=>{
+        if(bw<2 && bh<2) return;
+        const hits=pg.annots.filter(a=>annotInRect(a,bx,by,bw,bh));
+        if(!hits.length) return;
+        if(!S.sel || S.sel.docId!==doc.id || S.sel.pageIdx!==idx) S.sel={docId:doc.id,pageIdx:idx,ids:new Set()};
+        hits.forEach(a=>S.sel.ids.add(a.id));
+        const list=selAnnots(); if(list.length) syncFontUI(list[0]);
+        refreshOverlay(doc, idx);
+        toast(`Selected ${S.sel.ids.size} item${S.sel.ids.size>1?"s":""}.`);
+      }, "rgba(123,108,255,.14)", "#7b6cff", false);
+      return;
+    }
 
     if (S.tool==="text"||S.tool==="textbox"){
       e.preventDefault();
-      const a={ id:++aid, t:"text", x, y, text:"", size:f.size, fam:f.fam, color:f.color,
+      const a={ id:++aid, t:"text", x, y:y-f.size*0.8, text:"", size:f.size, fam:f.fam, color:f.color,
         bold:f.bold, ital:f.ital, box:S.tool==="textbox" };
       pg.annots.push(a); refreshOverlay(doc, idx);
       const el=ov.querySelector(`.ann[data-aid="${a.id}"]`);
