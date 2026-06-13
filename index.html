@@ -125,6 +125,7 @@
   .ann.txt{white-space:pre-wrap; line-height:1.15; min-width:8px; min-height:1em; outline:none;}
   .ann.txt.editing{outline:1.5px dashed var(--accent); background:rgba(123,108,255,.06);}
   .ann.selbox{outline:1.5px solid var(--accent) !important;}
+  .ann.grouped{outline:1px dashed rgba(123,108,255,.45);}
   .ann .rsz{position:absolute; right:-6px; bottom:-6px; width:11px; height:11px; background:var(--accent); border:2px solid #fff; border-radius:3px; cursor:nwse-resize;}
   .hot{position:absolute; cursor:text; border-radius:2px;}
   .hot:hover{background:rgba(123,108,255,.22); box-shadow:0 0 0 1px var(--accent);}
@@ -380,7 +381,7 @@ const { PDFDocument, degrees, rgb, StandardFonts, BlendMode } = PDFLib;
 
 /* ════════ state ════════ */
 const S = { docs: [], active: "start", tool: "hand", sel: null /* {docId,pageIdx,aid} */, pendingImg: null };
-let uid = 0, aid = 0;
+let uid = 0, aid = 0, gid = 0;
 const $  = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const toastEl = $("#toast"); let toastT;
@@ -440,6 +441,13 @@ function annotInRect(a,bx,by,bw,bh){
   const [x,y,w,h]=annotBBox(a);
   return x < bx+bw && x+w > bx && y < by+bh && y+h > by;
 }
+// Pull in every member of any group that has a selected member
+function expandToGroups(pg, idSet){
+  const grps=new Set();
+  pg.annots.forEach(a=>{ if(idSet.has(a.id) && a.grp) grps.add(a.grp); });
+  if(grps.size) pg.annots.forEach(a=>{ if(a.grp && grps.has(a.grp)) idSet.add(a.id); });
+  return idSet;
+}
 
 /* ════════ opening files ════════ */
 async function loadSource(bytes){
@@ -475,6 +483,19 @@ document.addEventListener("keydown", e => {
       if(pg && pg.annots.length){ e.preventDefault();
         S.sel={docId:d.id, pageIdx:idx, ids:new Set(pg.annots.map(a=>a.id))};
         refreshOverlay(d, idx); toast(`Selected all ${pg.annots.length} items on this page.`); } }
+  }
+  if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="g" && !e.shiftKey && !typing){
+    const sc=selScope();
+    if(sc && S.sel.ids.size>1){ e.preventDefault();
+      const g=++gid; selAnnots().forEach(a=>a.grp=g);
+      refreshOverlay(sc.doc, sc.idx); toast(`Grouped ${S.sel.ids.size} items — they now move and edit together.`); }
+    else if(sc){ e.preventDefault(); toast("Select 2 or more items first (drag a box around them)."); }
+  }
+  if ((e.ctrlKey||e.metaKey) && e.shiftKey && e.key.toLowerCase()==="g" && !typing){
+    const sc=selScope();
+    if(sc && S.sel.ids.size){ e.preventDefault();
+      let n=0; selAnnots().forEach(a=>{ if(a.grp){ delete a.grp; n++; } });
+      refreshOverlay(sc.doc, sc.idx); toast(n?`Ungrouped ${n} item${n>1?"s":""}.`:"Nothing grouped in the selection."); }
   }
   if ((e.key==="Delete"||e.key==="Backspace") && S.sel && !typing){
     const sc = selScope();
@@ -838,7 +859,7 @@ function renderAnnots(doc, idx, ov){
       svg.appendChild(el); return;
     }
     const el=document.createElement("div");
-    el.className="ann"+(seld?" selbox":""); el.dataset.aid=a.id;
+    el.className="ann"+(seld?" selbox":"")+(a.grp?" grouped":""); el.dataset.aid=a.id;
     const px=v=>v*z+"px";
     if (a.t==="text"){
       el.classList.add("txt");
@@ -917,8 +938,11 @@ function bindAnnotEvents(doc, idx, a, el){
     e.stopPropagation();
     const additive = e.shiftKey||e.ctrlKey||e.metaKey;
     if(!S.sel || S.sel.docId!==doc.id || S.sel.pageIdx!==idx) S.sel={docId:doc.id, pageIdx:idx, ids:new Set()};
-    if(additive){ if(S.sel.ids.has(a.id)) S.sel.ids.delete(a.id); else S.sel.ids.add(a.id); }
-    else if(!S.sel.ids.has(a.id)){ S.sel.ids=new Set([a.id]); }
+    const pg=doc.pages[idx];
+    const cluster = a.grp ? pg.annots.filter(x=>x.grp===a.grp).map(x=>x.id) : [a.id];
+    const allIn = cluster.every(id=>S.sel.ids.has(id));
+    if(additive){ if(allIn) cluster.forEach(id=>S.sel.ids.delete(id)); else cluster.forEach(id=>S.sel.ids.add(id)); }
+    else if(!allIn){ S.sel.ids=new Set(cluster); }
     syncFontUI(a);
     refreshOverlay(doc, idx);
     if(!S.sel.ids.has(a.id)) return; // just deselected
@@ -988,6 +1012,7 @@ function bindOverlay(doc, idx, ov){
         if(!hits.length) return;
         if(!S.sel || S.sel.docId!==doc.id || S.sel.pageIdx!==idx) S.sel={docId:doc.id,pageIdx:idx,ids:new Set()};
         hits.forEach(a=>S.sel.ids.add(a.id));
+        expandToGroups(pg, S.sel.ids);
         const list=selAnnots(); if(list.length) syncFontUI(list[0]);
         refreshOverlay(doc, idx);
         toast(`Selected ${S.sel.ids.size} item${S.sel.ids.size>1?"s":""}.`);
@@ -1655,18 +1680,21 @@ async function saveSession(){
 async function doRestore(data){
   busy(true,"Restoring your work…");
   try{
-    S.docs=[]; let maxAid=0;
+    S.docs=[]; let maxAid=0, maxGid=0;
     for(const sd of data.docs){
       const sources=[];
       for(const b of sd.srcBytes){ sources.push(await loadSource(b instanceof Uint8Array?b:new Uint8Array(b))); }
-      (sd.pages||[]).forEach(p=>(p.annots||[]).forEach(a=>{ if(typeof a.id==="number"&&a.id>maxAid) maxAid=a.id; }));
+      (sd.pages||[]).forEach(p=>(p.annots||[]).forEach(a=>{
+        if(typeof a.id==="number"&&a.id>maxAid) maxAid=a.id;
+        if(typeof a.grp==="number"&&a.grp>maxGid) maxGid=a.grp;
+      }));
       S.docs.push({
         id:"d"+(++uid), name:sd.name, sources,
         pages: sd.pages||[], zoom:1, fit:sd.fit||"width", sel:sd.sel||0,
         obs:null, tobs:null, marks: sd.marks||{wm:null,hf:null,bates:null}
       });
     }
-    aid=Math.max(aid,maxAid)+1;
+    aid=Math.max(aid,maxAid)+1; gid=Math.max(gid,maxGid);
     const ai=data.activeIndex;
     S.active = (ai>=0 && S.docs[ai]) ? S.docs[ai].id : (S.docs.length?S.docs[0].id:"start");
     busy(false); bootReady=true; renderTabs(); renderActive();
