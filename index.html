@@ -20,6 +20,7 @@
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{
     --chrome:#232530; --chrome-2:#2b2d3a; --chrome-3:#343748;
@@ -126,7 +127,8 @@
   .ann.txt.editing{outline:1.5px dashed var(--accent); background:rgba(123,108,255,.06);}
   .ann.selbox{outline:1.5px solid var(--accent) !important;}
   .ann.grouped{outline:1px dashed rgba(123,108,255,.45);}
-  .ann .rsz{position:absolute; right:-6px; bottom:-6px; width:11px; height:11px; background:var(--accent); border:2px solid #fff; border-radius:3px; cursor:nwse-resize;}
+  .ann .rsz{position:absolute; width:10px; height:10px; background:var(--accent); border:2px solid #fff; border-radius:2px; z-index:7; box-shadow:0 1px 3px rgba(0,0,0,.4);}
+  .lhandle{position:absolute; width:11px; height:11px; margin:-6px 0 0 -6px; background:#fff; border:2px solid var(--accent); border-radius:50%; z-index:8; cursor:move; box-shadow:0 1px 3px rgba(0,0,0,.4);}
   .hot{position:absolute; cursor:text; border-radius:2px;}
   .hot:hover{background:rgba(123,108,255,.22); box-shadow:0 0 0 1px var(--accent);}
   svg.shapes{position:absolute; inset:0; width:100%; height:100%; overflow:visible;}
@@ -313,6 +315,7 @@
   </div><div class="glabel">Page Marks</div></div>
   <div class="rgroup"><div class="tools">
     <button class="rbtn" data-act="mergeAll"><svg viewBox="0 0 24 24"><path d="M8 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-3M9 4h10a2 2 0 0 1 2 2v10"/></svg><span>Merge All Tabs</span></button>
+    <button class="rbtn" data-act="saveAll"><svg viewBox="0 0 24 24"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M8 21h8"/></svg><span>Download All (ZIP)</span></button>
   </div><div class="glabel">Combine</div></div>
 </div>
 
@@ -928,12 +931,72 @@ function renderAnnots(doc, idx, ov){
       const im=document.createElement("img"); im.src=a.dataUrl; im.style.width="100%"; im.style.height="100%";
       im.draggable=false; el.appendChild(im);
     }
-    if (seld && S.sel.ids.size===1 && ["whiteout","hl","rect","ellipse","img"].includes(a.t)){
-      const h=document.createElement("div"); h.className="rsz"; el.appendChild(h);
-      bindResize(doc, idx, a, h);
+    if (seld && S.sel.ids.size===1){
+      if(["whiteout","hl","rect","ellipse","img"].includes(a.t)) addBoxHandles(doc, idx, a, el);
+      else if(a.t==="text") addTextHandle(doc, idx, a, el);
     }
     bindAnnotEvents(doc, idx, a, el);
     ov.appendChild(el);
+  });
+  // endpoint handles for a single selected line/arrow (drawn in overlay space)
+  if (S.sel && S.sel.docId===doc.id && S.sel.pageIdx===idx && S.sel.ids.size===1){
+    const a=pg.annots.find(x=>x.id===[...S.sel.ids][0]);
+    if(a && (a.t==="line"||a.t==="arrow")) addLineHandles(doc, idx, a, ov);
+  }
+}
+function addBoxHandles(doc, idx, a, el){
+  const z=doc.zoom;
+  const defs=[["nw",0,0,"nwse-resize"],["n",.5,0,"ns-resize"],["ne",1,0,"nesw-resize"],
+    ["e",1,.5,"ew-resize"],["se",1,1,"nwse-resize"],["s",.5,1,"ns-resize"],
+    ["sw",0,1,"nesw-resize"],["w",0,.5,"ew-resize"]];
+  defs.forEach(([pos,fx,fy,cur])=>{
+    const h=document.createElement("div"); h.className="rsz";
+    h.style.left=`calc(${fx*100}% - 5px)`; h.style.top=`calc(${fy*100}% - 5px)`; h.style.cursor=cur;
+    el.appendChild(h);
+    h.addEventListener("mousedown",e=>{
+      e.stopPropagation(); e.preventDefault();
+      const sx=e.clientX, sy=e.clientY, ox=a.x, oy=a.y, ow=a.w, oh=a.h;
+      const mm=ev=>{ const dx=(ev.clientX-sx)/z, dy=(ev.clientY-sy)/z;
+        let nx=ox, ny=oy, nw=ow, nh=oh;
+        if(pos.includes("w")){ nx=ox+dx; nw=ow-dx; }
+        if(pos.includes("e")){ nw=ow+dx; }
+        if(pos.includes("n")){ ny=oy+dy; nh=oh-dy; }
+        if(pos.includes("s")){ nh=oh+dy; }
+        if(nw<8){ if(pos.includes("w")) nx=ox+ow-8; nw=8; }
+        if(nh<8){ if(pos.includes("n")) ny=oy+oh-8; nh=8; }
+        a.x=nx; a.y=ny; a.w=nw; a.h=nh; refreshOverlay(doc, idx); };
+      const mu=()=>{ window.removeEventListener("mousemove",mm); window.removeEventListener("mouseup",mu); };
+      window.addEventListener("mousemove",mm); window.addEventListener("mouseup",mu);
+    });
+  });
+}
+function addTextHandle(doc, idx, a, el){
+  const z=doc.zoom;
+  const h=document.createElement("div"); h.className="rsz";
+  h.style.right="-6px"; h.style.bottom="-6px"; h.style.cursor="nwse-resize"; h.title="Drag to resize text";
+  el.appendChild(h);
+  h.addEventListener("mousedown",e=>{
+    e.stopPropagation(); e.preventDefault();
+    const sy=e.clientY, os=a.size, oh=Math.max(1, el.getBoundingClientRect().height/z);
+    const mm=ev=>{ const dy=(ev.clientY-sy)/z; const f=Math.max(.2,(oh+dy)/oh);
+      a.size=Math.max(6, Math.min(200, Math.round(os*f))); refreshOverlay(doc, idx); };
+    const mu=()=>{ window.removeEventListener("mousemove",mm); window.removeEventListener("mouseup",mu); };
+    window.addEventListener("mousemove",mm); window.addEventListener("mouseup",mu);
+  });
+}
+function addLineHandles(doc, idx, a, ov){
+  const z=doc.zoom;
+  [["1",a.x1,a.y1],["2",a.x2,a.y2]].forEach(([which,hx,hy])=>{
+    const h=document.createElement("div"); h.className="lhandle";
+    h.style.left=(hx*z)+"px"; h.style.top=(hy*z)+"px";
+    ov.appendChild(h);
+    h.addEventListener("mousedown",e=>{
+      e.stopPropagation(); e.preventDefault();
+      const sx=e.clientX, sy=e.clientY, ox=a["x"+which], oy=a["y"+which];
+      const mm=ev=>{ a["x"+which]=ox+(ev.clientX-sx)/z; a["y"+which]=oy+(ev.clientY-sy)/z; refreshOverlay(doc, idx); };
+      const mu=()=>{ window.removeEventListener("mousemove",mm); window.removeEventListener("mouseup",mu); };
+      window.addEventListener("mousemove",mm); window.addEventListener("mouseup",mu);
+    });
   });
 }
 function renderMarks(doc, idx, ov){
@@ -1224,7 +1287,7 @@ const ACT = {
     renderActive(); toast("Blank page inserted."); },
   insertPdf: ()=>insertDialog(),
   addImage: ()=>$("#imgPick").click(),
-  extract: extractPage, save: saveDoc, mergeAll: mergeAll,
+  extract: extractPage, save: saveDoc, mergeAll: mergeAll, saveAll: saveAll,
   exportPNG: ()=>exportPage("png"), exportJPG: ()=>exportPage("jpeg"),
   exportAll: exportAllPages, wordCount: wordCount,
   tighten: ()=>{
@@ -1662,6 +1725,28 @@ async function mergeAll(){
     dlBlob(new Blob([await out.save()],{type:"application/pdf"}), "targettool-merged.pdf");
     toast(`Merged ${S.docs.length} documents ✓`);
   }catch(err){ console.error(err); toast("Merge failed — one file may be encrypted."); }
+  busy(false);
+}
+async function saveAll(){
+  if(!S.docs.length){ toast("Open at least one PDF first."); return; }
+  if(typeof JSZip==="undefined"){ toast("ZIP library didn't load — try saving tabs individually."); return; }
+  busy(true,`Preparing ${S.docs.length} file${S.docs.length>1?"s":""}…`);
+  try{
+    const zip=new JSZip(); const used={};
+    for(const d of S.docs){
+      const out=await PDFDocument.create();
+      const fonts=await embedFonts(out);
+      await buildOutput(out,d,fonts);
+      let name=d.name.replace(/\.pdf$/i,"")+"-edited.pdf";
+      if(used[name]){ used[name]++; name=name.replace(/\.pdf$/i,"")+"-"+used[name]+".pdf"; } else used[name]=1;
+      zip.file(name, await out.save());
+    }
+    const blob=await zip.generateAsync({type:"blob"});
+    const u=URL.createObjectURL(blob);
+    const a=Object.assign(document.createElement("a"),{href:u,download:"targettool-all-tabs.zip"});
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000);
+    toast(`Downloaded ${S.docs.length} edited PDF${S.docs.length>1?"s":""} as a ZIP ✓`);
+  }catch(err){ console.error(err); toast("Couldn't build the ZIP — one file may be encrypted."); }
   busy(false);
 }
 
