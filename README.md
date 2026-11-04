@@ -30,6 +30,21 @@ In the Vercel dashboard: **Project → Settings → Domains → Add**, then poin
 your domain's DNS to Vercel (you've done this before via Spaceship for
 nexifysolution.net — same process).
 
+## Features
+
+- **Edit:** edit existing text, add text/textbox, images, whiteout, shapes, pencil
+- **Undo / redo:** every edit, page operation, bookmark and form value (Ctrl+Z, Ctrl+Y / Ctrl+Shift+Z)
+- **Find & replace:** Ctrl+F; match case, whole words, replace one or all (rotated text is skipped)
+- **Comment:** highlight, underline, strikeout and squiggly snap to the text you drag across (click selects a word);
+  sticky notes, stamps (standard, dynamic name/date, or your own image), polygon and cloud shapes;
+  a Comments panel with replies and your author name
+- **Saving comments:** by default they're written as real PDF annotations (editable in Foxit / Acrobat, replies kept);
+  turn on **Flatten** (Comment tab or Comments panel) to burn them into the page instead
+- **Bookmarks:** reads the PDF's existing outline; add, nest, rename, reorder; written back on save (merged files get one group per file)
+- **Links:** drag a box, link to a page or a web address; follow with the Hand tool
+- **Fill & Sign:** fill existing form fields right on the page (fields stay fillable after saving),
+  signatures and initials (draw, type or upload — saved in this browser), check, cross and date
+
 ## Notes
 
 - Everything runs in the browser; there is no backend, so nothing to configure.

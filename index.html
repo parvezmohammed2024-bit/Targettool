@@ -16,7 +16,7 @@
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Targettool PDF Editor",
 "applicationCategory":"BusinessApplication","operatingSystem":"Web browser",
 "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
-"description":"Free browser-based PDF editor: edit text, add text and images, highlight, merge, organize pages, watermark, header and footer, Bates numbering. Files never leave your device."}
+"description":"Free browser-based PDF editor: edit text, find and replace, highlight, underline and strikeout, sticky notes and comments, stamps, fill and sign forms, bookmarks and links, merge, organize pages, watermark, header and footer, Bates numbering. Files never leave your device."}
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
@@ -24,7 +24,7 @@
 <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400;1,700&family=Open+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,700;1,400;1,700&family=Poppins:ital,wght@0,400;0,700;1,400;1,700&family=Nunito:ital,wght@0,400;0,700;1,400;1,700&family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Oswald:wght@400;700&family=Source+Code+Pro:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400;1,700&family=Open+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,700;1,400;1,700&family=Poppins:ital,wght@0,400;0,700;1,400;1,700&family=Nunito:ital,wght@0,400;0,700;1,400;1,700&family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Oswald:wght@400;700&family=Source+Code+Pro:ital,wght@0,400;0,700;1,400;1,700&family=Great+Vibes&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
 <style>
   :root{
     --chrome:#232530; --chrome-2:#2b2d3a; --chrome-3:#343748;
@@ -181,6 +181,77 @@
   .modal .acts .cancel:hover{color:var(--ink);}
   .modal pre{background:var(--chrome); border:1px solid #3a3d4e; border-radius:8px; padding:10px; font-size:12px;
     white-space:pre-wrap; max-height:300px; overflow:auto; color:var(--ink);}
+  /* ── Tier 1: side panels ── */
+  .sidebar{padding:0; flex-direction:column;}
+  .sidebar.show{display:flex;}
+  .sidebar.wide{width:286px;}
+  .sidetabs{display:flex; gap:2px; padding:6px 6px 0; border-bottom:1px solid #1a1b24; flex:none;}
+  .sidetabs button{flex:auto; padding:6px 3px 7px; font-size:11px; color:var(--ink-dim); border-radius:6px 6px 0 0; white-space:nowrap;}
+  .sidetabs button:hover{color:var(--ink); background:var(--chrome-3);}
+  .sidetabs button.on{color:var(--ink); background:var(--chrome-3); box-shadow:inset 0 -2px 0 var(--accent);}
+  .sidebody{flex:1; overflow-y:auto; padding:10px; scrollbar-width:thin; min-height:0;}
+  .phead{display:flex; align-items:center; gap:3px; margin-bottom:8px; flex-wrap:wrap;}
+  .phead b{font-size:12.5px; margin-right:auto;}
+  .phead.tools b{flex-basis:100%; margin-bottom:3px;}
+  .pbtn{min-width:24px; height:24px; padding:0 6px; border-radius:6px; background:var(--chrome-3); color:var(--ink); font-size:12px; display:inline-grid; place-items:center;}
+  .pbtn:hover:not(:disabled){background:#41445a;} .pbtn:disabled{opacity:.35; cursor:default;}
+  .pempty{font-size:12px; color:var(--ink-faint); line-height:1.5; padding:8px 2px;}
+  .bmrow{display:flex; align-items:center; gap:4px; padding:5px 6px; border-radius:6px; cursor:pointer; font-size:12.5px;}
+  .bmrow:hover{background:var(--chrome-3);} .bmrow.sel{background:var(--accent-soft); box-shadow:inset 0 0 0 1px var(--accent);}
+  .bmrow .tw{width:14px; flex:none; color:var(--ink-dim); text-align:center; font-size:10px;}
+  .bmrow .bt{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .bmrow .bp{font-size:10.5px; color:var(--ink-faint); flex:none;}
+  .cmset{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--ink-dim); margin:0 0 8px;}
+  .cmset input[type=text]{flex:1; min-width:0; background:var(--chrome); border:1px solid #3a3d4e; color:var(--ink); border-radius:6px; padding:4px 7px; font-size:12px;}
+  .cm{background:var(--chrome); border:1px solid #3a3d4e; border-radius:9px; padding:8px; margin-bottom:8px; font-size:12px;}
+  .cm.sel{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}
+  .cmh{display:flex; align-items:center; gap:6px; cursor:pointer;}
+  .cmic{width:10px; height:10px; border-radius:3px; flex:none; box-shadow:0 0 0 1px rgba(255,255,255,.2) inset;}
+  .cmh .cmt{font-weight:600;} .cmh .cmp{color:var(--ink-faint);}
+  .cmh .x{margin-left:auto; color:var(--ink-faint); padding:0 4px;} .cmh .x:hover{color:var(--danger);}
+  .cmmeta{color:var(--ink-faint); font-size:10.5px; margin:3px 0 5px;}
+  .cmq{color:var(--ink-dim); font-style:italic; margin:2px 0 5px; border-left:2px solid #4a4d60; padding-left:6px; max-height:44px; overflow:hidden;}
+  .cm textarea{width:100%; min-height:38px; resize:vertical; background:var(--chrome-2); border:1px solid #3a3d4e; color:var(--ink); border-radius:6px; padding:5px 7px; font:inherit; font-size:12px;}
+  .rep{margin:6px 0 0 10px; padding-left:8px; border-left:2px solid #3a3d4e;}
+  .rep .ra{color:var(--ink-faint); font-size:10.5px;} .rep .rx{float:right; color:var(--ink-faint);} .rep .rx:hover{color:var(--danger);}
+  .repadd{display:flex; gap:4px; margin-top:6px;}
+  .repadd input{flex:1; min-width:0; background:var(--chrome-2); border:1px solid #3a3d4e; color:var(--ink); border-radius:6px; padding:4px 7px; font-size:12px;}
+  .cmorig{opacity:.8;} .cmsec{font-size:10.5px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-faint); margin:14px 0 6px;}
+
+  /* ── find bar ── */
+  .work{position:relative;}
+  .findbar{position:absolute; top:10px; right:22px; z-index:30; background:var(--chrome-2); border:1px solid #3a3d4e; border-radius:10px;
+    padding:6px; display:none; flex-wrap:wrap; gap:4px; align-items:center; box-shadow:0 8px 30px rgba(0,0,0,.45); width:min(440px,calc(100% - 40px));}
+  .findbar.show{display:flex;}
+  .findbar input{flex:1; min-width:120px; background:var(--chrome); border:1px solid #3a3d4e; color:var(--ink); border-radius:6px; padding:5px 8px; font-size:12.5px;}
+  .findbar .fc{font-size:11.5px; color:var(--ink-dim); min-width:54px; text-align:center;}
+  .findbar .frrow{display:none; width:100%; gap:4px;} .findbar.rep .frrow{display:flex;}
+  .findhit{position:absolute; background:rgba(255,200,0,.38); outline:1px solid rgba(220,150,0,.7); pointer-events:none; z-index:4; border-radius:1px;}
+  .findhit.cur{background:rgba(255,110,0,.5); outline:2px solid #ff6a00;}
+
+  /* ── markup, notes, links, stamps, forms ── */
+  .ann.mk svg{position:absolute; inset:0; width:100%; height:100%; overflow:visible;}
+  .ann.note{cursor:pointer; filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
+  .ann.note svg{width:100%; height:100%; display:block;}
+  .ann.lnk{border:1.5px dashed #1c7ed6; background:rgba(28,126,214,.06);}
+  .viewer.hand .ann.lnk{cursor:pointer;} .ann.lnk:hover{background:rgba(28,126,214,.16);}
+  .fld{position:absolute; z-index:3; border:1px solid transparent; background:transparent; color:#000; padding:0 3px;
+    font-family:Helvetica,Arial,sans-serif; outline:none; border-radius:2px; resize:none;}
+  .hlf .fld{background:rgba(100,149,237,.18); border-color:rgba(70,110,220,.45);}
+  .fld:focus{background:rgba(123,108,255,.12); border-color:var(--accent);}
+  .fld[type=checkbox],.fld[type=radio]{margin:0; padding:0; accent-color:#222; cursor:pointer;}
+  .sigtabs{display:flex; gap:4px; margin-bottom:10px;}
+  .sigtabs button{padding:6px 12px; border-radius:7px; background:var(--chrome-3); color:var(--ink-dim); font-size:12.5px;}
+  .sigtabs button.on{background:var(--accent-soft); color:var(--ink); box-shadow:inset 0 0 0 1px var(--accent);}
+  .sigpad{width:100%; height:150px; background:#fff; border-radius:8px; display:block; touch-action:none; cursor:crosshair;}
+  .sigsaved{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
+  .sigsaved div{position:relative; background:#fff; border-radius:6px; padding:4px; cursor:pointer; outline:2px solid transparent;}
+  .sigsaved div:hover{outline-color:var(--accent);} .sigsaved img{height:34px; display:block;}
+  .sigsaved span{position:absolute; top:-6px; right:-6px; width:16px; height:16px; border-radius:50%; background:#14151e; color:#fff; font-size:10px; display:grid; place-items:center;}
+  .stampgrid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .stampgrid button{background:#fff; border-radius:8px; padding:6px; display:grid; place-items:center; outline:2px solid transparent;}
+  .stampgrid button:hover{outline-color:var(--accent);} .stampgrid img{max-width:100%; max-height:40px;}
+  .rbtn.flat{position:relative;} .chip.flaton{background:var(--accent-soft); color:var(--ink); box-shadow:inset 0 0 0 1px var(--accent);}
   @media (prefers-reduced-motion:reduce){.spin{animation-duration:2.5s} .toast{transition:none}}
   @media (max-width:860px){.sidebar{display:none!important} .rbtn span{display:none} .rbtn{min-width:38px} .privacy-badge{display:none}}
 </style>
@@ -197,6 +268,7 @@
     <button class="ribbon-tab" data-rt="comment">Comment</button>
     <button class="ribbon-tab" data-rt="view">View</button>
     <button class="ribbon-tab" data-rt="form">Form</button>
+    <button class="ribbon-tab" data-rt="sign">Fill &amp; Sign</button>
     <button class="ribbon-tab" data-rt="protect">Protect</button>
   </nav>
   <div class="privacy-badge">🔒 <b>100% private</b> — files never leave your device</div>
@@ -207,9 +279,12 @@
   <div class="rgroup"><div class="tools">
     <button class="rbtn" data-act="open"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Open</span></button>
     <button class="rbtn vdep" data-act="save"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><span>Save</span></button>
+    <button class="rbtn" id="btnUndo" data-act="undo" title="Undo (Ctrl+Z)" disabled><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></svg><span>Undo</span></button>
+    <button class="rbtn" id="btnRedo" data-act="redo" title="Redo (Ctrl+Y / Ctrl+Shift+Z)" disabled><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5m5 5H10a6 6 0 0 0 0 12h3"/></svg><span>Redo</span></button>
   </div><div class="glabel">File</div></div>
 
   <div class="rgroup"><div class="tools">
+    <button class="rbtn vdep" data-act="find" title="Find &amp; replace (Ctrl+F)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Find</span></button>
     <button class="rbtn tool on" data-tool="hand"><svg viewBox="0 0 24 24"><path d="M8 12V6.5a1.5 1.5 0 0 1 3 0V11m0-5.5v-1a1.5 1.5 0 0 1 3 0V11m0-4.5a1.5 1.5 0 0 1 3 0V13m0-3.5a1.5 1.5 0 0 1 3 0v4.5c0 4-2.5 7-6.5 7S8 19 6.5 16.5L4.8 13.6a1.4 1.4 0 0 1 2.3-1.5L8 13.5"/></svg><span>Hand</span></button>
     <button class="rbtn tool" data-tool="select"><svg viewBox="0 0 24 24"><path d="M5 3l14 8-6.5 1.5L10 19z"/></svg><span>Select</span></button>
     <button class="rbtn tool" data-tool="selectText" title="Select text in the PDF, then Ctrl+C to copy"><svg viewBox="0 0 24 24"><path d="M5 5h14M5 5v3m14-3v3M12 5v14m-3 0h6"/></svg><span>Select Text</span></button>
@@ -268,6 +343,7 @@
   <div class="rgroup"><div class="tools">
     <button class="rbtn tool vdep" data-tool="text"><svg viewBox="0 0 24 24"><path d="M5 5h14M12 5v14"/></svg><span>Add Text</span></button>
     <button class="rbtn vdep" data-act="addImage"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg><span>Add Image</span></button>
+    <button class="rbtn tool vdep" data-tool="link" title="Drag a box, then choose a page or web address"><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span>Link</span></button>
   </div><div class="glabel">Insert</div></div>
   <div class="rgroup"><div class="tools">
     <button class="rbtn tool vdep" data-tool="rect"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1"/></svg><span>Rectangle</span></button>
@@ -325,21 +401,33 @@
 
 <div class="ribbon" id="rib-comment" style="display:none">
   <div class="rgroup"><div class="tools">
-    <button class="rbtn tool vdep" data-tool="hl"><svg viewBox="0 0 24 24"><path d="M9 11l4 4L20 8l-4-4zM9 11l-3 3 4 4 3-3M4 20h6"/></svg><span>Highlight</span></button>
-    <button class="rbtn tool vdep" data-tool="whiteout"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="9" rx="1"/><path d="M4 20h16"/></svg><span>Whiteout</span></button>
+    <button class="rbtn tool vdep" data-tool="hl" title="Drag across text to highlight it"><svg viewBox="0 0 24 24"><path d="M9 11l4 4L20 8l-4-4zM9 11l-3 3 4 4 3-3M4 20h6"/></svg><span>Highlight</span></button>
+    <button class="rbtn tool vdep" data-tool="under" title="Drag across text to underline it"><svg viewBox="0 0 24 24"><path d="M7 4v7a5 5 0 0 0 10 0V4M5 20h14"/></svg><span>Underline</span></button>
+    <button class="rbtn tool vdep" data-tool="strike" title="Drag across text to strike it out"><svg viewBox="0 0 24 24"><path d="M16 6.5C15 5 13.6 4.5 12 4.5c-2.5 0-4 1.3-4 3.2 0 1.2.7 2 1.8 2.6M4 12h16M8.5 17c1 1.6 2.4 2.5 4 2.5 2.5 0 4-1.4 4-3.3 0-.8-.3-1.5-.8-2"/></svg><span>Strikeout</span></button>
+    <button class="rbtn tool vdep" data-tool="squig" title="Drag across text for a squiggly underline"><svg viewBox="0 0 24 24"><path d="M7 4v6a5 5 0 0 0 10 0V4M3 19l2-2 2 2 2-2 2 2 2-2 2 2 2-2 2 2 2-2"/></svg><span>Squiggly</span></button>
   </div><div class="glabel">Text Markup</div></div>
   <div class="rgroup"><div class="tools">
+    <button class="rbtn tool vdep" data-tool="note" title="Click to drop a sticky note"><svg viewBox="0 0 24 24"><path d="M5 4h14a1 1 0 0 1 1 1v10l-5 5H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM15 20v-5h5M8 9h8M8 13h5"/></svg><span>Note</span></button>
     <button class="rbtn tool vdep" data-tool="text"><svg viewBox="0 0 24 24"><path d="M6 5h12M12 5v14m-3 0h6"/></svg><span>Typewriter</span></button>
     <button class="rbtn tool vdep" data-tool="textbox" title="Text with a box border"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 10h8M8 14h5"/></svg><span>Textbox</span></button>
-  </div><div class="glabel">Typewriter</div></div>
+  </div><div class="glabel">Comment</div></div>
   <div class="rgroup"><div class="tools">
     <button class="rbtn tool vdep" data-tool="ink"><svg viewBox="0 0 24 24"><path d="M4 18c3-6 5 4 8-3s5 1 8-6"/></svg><span>Pencil</span></button>
     <button class="rbtn tool vdep" data-tool="rect"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1"/></svg><span>Rectangle</span></button>
     <button class="rbtn tool vdep" data-tool="ellipse"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8" ry="6"/></svg><span>Ellipse</span></button>
+    <button class="rbtn tool vdep" data-tool="poly" title="Click points, double-click (or click the first point) to finish"><svg viewBox="0 0 24 24"><path d="M12 3l8 6-3 11H7L4 9z"/></svg><span>Polygon</span></button>
+    <button class="rbtn tool vdep" data-tool="cloud" title="Click points, double-click to finish"><svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.6-8 5.5 5.5 0 0 1 10.6-1.4A4.5 4.5 0 0 1 17.5 18z"/></svg><span>Cloud</span></button>
     <button class="rbtn tool vdep" data-tool="line"><svg viewBox="0 0 24 24"><path d="M5 19L19 5"/></svg><span>Line</span></button>
     <button class="rbtn tool vdep" data-tool="arrow"><svg viewBox="0 0 24 24"><path d="M5 19L19 5m0 0h-7m7 0v7"/></svg><span>Arrow</span></button>
     <button class="rbtn tool vdep" data-tool="eraser" title="Click an annotation to remove it"><svg viewBox="0 0 24 24"><path d="M19 20H8L3 15a2 2 0 0 1 0-3l9-9a2 2 0 0 1 3 0l6 6a2 2 0 0 1 0 3l-7 7"/></svg><span>Eraser</span></button>
   </div><div class="glabel">Drawing</div></div>
+  <div class="rgroup"><div class="tools">
+    <button class="rbtn vdep" data-act="stamp" title="Approved, Draft, Confidential… or your own image"><svg viewBox="0 0 24 24"><path d="M9 4h6l-1 7h3a2 2 0 0 1 2 2v2H5v-2a2 2 0 0 1 2-2h3zM5 19h14"/></svg><span>Stamp</span></button>
+  </div><div class="glabel">Stamp</div></div>
+  <div class="rgroup"><div class="tools">
+    <button class="rbtn vdep" data-act="panelComments"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Comment List</span></button>
+    <button class="rbtn" id="btnFlatten" data-act="toggleFlatten" title="Off: comments are saved as real PDF annotations (editable in Foxit/Acrobat). On: burned into the page."><svg viewBox="0 0 24 24"><path d="M4 8l8-4 8 4-8 4zM4 12l8 4 8-4M4 16l8 4 8-4"/></svg><span>Flatten: Off</span></button>
+  </div><div class="glabel">Manage</div></div>
 </div>
 
 <div class="ribbon" id="rib-view" style="display:none">
@@ -353,14 +441,35 @@
     <button class="rbtn vdep" data-act="fitPage"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/></svg><span>Fit Page</span></button>
   </div><div class="glabel">Zoom</div></div>
   <div class="rgroup"><div class="tools">
+    <button class="rbtn vdep" data-act="panelPages"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="7" height="8" rx="1"/><rect x="13" y="3" width="7" height="8" rx="1"/><rect x="4" y="13" width="7" height="8" rx="1"/><rect x="13" y="13" width="7" height="8" rx="1"/></svg><span>Pages</span></button>
+    <button class="rbtn vdep" data-act="panelBookmarks"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg><span>Bookmarks</span></button>
+    <button class="rbtn vdep" data-act="panelComments"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Comments</span></button>
+    <button class="rbtn vdep" data-act="find"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Find</span></button>
+  </div><div class="glabel">Navigation</div></div>
+  <div class="rgroup"><div class="tools">
     <button class="rbtn vdep" data-act="wordCount"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/></svg><span>Word Count</span></button>
   </div><div class="glabel">Review</div></div>
 </div>
 
 <div class="ribbon" id="rib-form" style="display:none">
   <div class="rgroup"><div class="tools">
+    <button class="rbtn vdep" data-act="hlFields" title="Show fillable fields in blue"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="5" rx="1"/><rect x="3" y="14" width="11" height="5" rx="1"/></svg><span>Highlight Fields</span></button>
     <button class="rbtn vdep" data-act="formInfo"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h4m-4 4h7"/></svg><span>Form Designer</span></button>
   </div><div class="glabel">Form Fields</div></div>
+</div>
+
+<div class="ribbon" id="rib-sign" style="display:none">
+  <div class="rgroup"><div class="tools">
+    <button class="rbtn vdep" data-act="hlFields" title="Fill existing form fields directly on the page — show them in blue"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="5" rx="1"/><rect x="3" y="14" width="11" height="5" rx="1"/></svg><span>Highlight Fields</span></button>
+    <button class="rbtn tool vdep" data-tool="text"><svg viewBox="0 0 24 24"><path d="M6 5h12M12 5v14m-3 0h6"/></svg><span>Add Text</span></button>
+    <button class="rbtn tool vdep" data-tool="check" title="Click to place a check mark"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span>Check</span></button>
+    <button class="rbtn tool vdep" data-tool="cross" title="Click to place a cross"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg><span>Cross</span></button>
+    <button class="rbtn tool vdep" data-tool="date" title="Click to place today's date"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4m6-4v4"/></svg><span>Date</span></button>
+  </div><div class="glabel">Fill</div></div>
+  <div class="rgroup"><div class="tools">
+    <button class="rbtn vdep" data-act="signature" title="Draw, type or upload your signature"><svg viewBox="0 0 24 24"><path d="M3 17c3 0 4-9 7-9s-1 9 2 9 3-4 5-4 1 3 4 3M3 21h18"/></svg><span>Signature</span></button>
+    <button class="rbtn vdep" data-act="initials"><svg viewBox="0 0 24 24"><path d="M5 18V6m4 12V6l6 12V6M19 6v12"/></svg><span>Initials</span></button>
+  </div><div class="glabel">Sign</div></div>
 </div>
 
 <div class="ribbon" id="rib-protect" style="display:none">
@@ -373,8 +482,30 @@
 <div class="doctabs" id="doctabs"></div>
 
 <div class="work">
-  <aside class="sidebar" id="sidebar"></aside>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidetabs" id="sidetabs">
+      <button data-panel="pages" class="on">Pages</button>
+      <button data-panel="bookmarks">Bookmarks</button>
+      <button data-panel="comments">Comments</button>
+    </div>
+    <div class="sidebody" id="sidebody"></div>
+  </aside>
   <div class="viewerwrap" id="viewerwrap"></div>
+  <div class="findbar" id="findbar" role="search">
+    <input id="fq" placeholder="Find in document" aria-label="Find text">
+    <span class="fc" id="fcount">0 / 0</span>
+    <button class="pbtn" id="fprev" title="Previous (Shift+Enter)">↑</button>
+    <button class="pbtn" id="fnext" title="Next (Enter)">↓</button>
+    <button class="togg" id="fcs" title="Match case">Aa</button>
+    <button class="togg" id="fww" title="Whole words only"><u>W</u></button>
+    <button class="pbtn" id="frtog" title="Show replace">⇄</button>
+    <button class="pbtn" id="fclose" title="Close (Esc)">✕</button>
+    <div class="frrow">
+      <input id="fr" placeholder="Replace with" aria-label="Replace with">
+      <button class="pbtn" id="frone">Replace</button>
+      <button class="pbtn" id="frall">Replace All</button>
+    </div>
+  </div>
 </div>
 
 <div class="status">
@@ -389,6 +520,8 @@
 <input type="file" id="filePick" accept="application/pdf" multiple hidden>
 <input type="file" id="pdfInsertPick" accept="application/pdf" hidden>
 <input type="file" id="imgPick" accept="image/png,image/jpeg" hidden>
+<input type="file" id="stampPick" accept="image/png,image/jpeg" hidden>
+<input type="file" id="sigPick" accept="image/png,image/jpeg" hidden>
 
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -396,8 +529,16 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 const { PDFDocument, degrees, rgb, StandardFonts, BlendMode } = PDFLib;
 
 /* ════════ state ════════ */
-const S = { docs: [], active: "start", tool: "hand", sel: null /* {docId,pageIdx,ids:Set} */, pendingImg: null, clip: [] };
-let uid = 0, aid = 0, gid = 0;
+const lsGet = (k,d) => { try{ const v=localStorage.getItem(k); return v===null?d:v; }catch(_){ return d; } };
+const lsSet = (k,v) => { try{ localStorage.setItem(k,v); }catch(_){} };
+const S = { docs: [], active: "start", tool: "hand", sel: null /* {docId,pageIdx,ids:Set} */, pendingImg: null, clip: [],
+  panel: "pages", find: null, flatten: lsGet("tt_flatten","0")==="1", hlFields: lsGet("tt_hlfields","1")==="1",
+  pendingStamp: null, polyDraft: null, bmSel: null, cmSel: null };
+let uid = 0, aid = 0, gid = 0, pk = 0, bid = 0;
+const MARKUP = new Set(["hl","under","strike","squig"]);
+const COMMENTABLE = new Set(["note","hl","under","strike","squig","stamp"]);
+const MARK_COLOR = { hl:"#ffe066", under:"#1c7ed6", strike:"#e03131", squig:"#2f9e44" };
+const author = () => lsGet("tt_author","Guest") || "Guest";
 const $  = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const toastEl = $("#toast"); let toastT;
@@ -444,8 +585,8 @@ function applyFontToSel(){
   const f = fontState(); let changed=false;
   selAnnots().forEach(a=>{
     if (a.t === "text"){ Object.assign(a, { fam:f.fam, size:f.size, color:f.color, bold:f.bold, ital:f.ital, lh:f.lh }); changed=true; }
-    else if (["rect","ellipse","line","arrow","ink"].includes(a.t)){ a.stroke = f.color; a.sw = f.sw; changed=true; }
-    else if (a.t === "hl"){ a.color = f.color; changed=true; }
+    else if (["rect","ellipse","line","arrow","ink","poly"].includes(a.t)){ a.stroke = f.color; a.sw = f.sw; changed=true; }
+    else if (MARKUP.has(a.t) || a.t==="note"){ a.color = f.color; changed=true; }
   });
   if(changed) refreshOverlay(sc.doc, sc.idx);
 }
@@ -521,8 +662,10 @@ async function openFiles(fileList){
       const doc = { id:"d"+(++uid), name:f.name, sources:[src],
         pages: src.proxies.map((_,i)=>({ s:0, p:i, rot:0, annots:[] })),
         zoom:1, fit:"width", sel:0, obs:null, tobs:null,
-        marks:{ wm:null, hf:null, bates:null } };
-      S.docs.push(doc); S.active = doc.id;
+        marks:{ wm:null, hf:null, bates:null }, outline:[], form:{} };
+      ensurePageKeys(doc);
+      doc.outline = await readOutline(src, doc);
+      S.docs.push(doc); S.active = doc.id; histInit(doc);
     }catch(err){ console.error(err); toast(`Couldn't open "${f.name}" — corrupt or password-protected.`); }
   }
   busy(false); renderTabs(); renderActive();
@@ -531,6 +674,15 @@ $("#filePick").onchange = e => { openFiles(e.target.files); e.target.value=""; }
 document.addEventListener("keydown", e => {
   const typing = document.activeElement?.isContentEditable
     || ["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName);
+  const mod = e.ctrlKey||e.metaKey, k = e.key.toLowerCase();
+  if (mod && k==="f"){ if(activeDoc()){ e.preventDefault(); openFind(); } return; }
+  if (mod && !typing && ((k==="z" && e.shiftKey) || k==="y")){ e.preventDefault(); histGo(1); return; }
+  if (mod && !typing && k==="z"){ e.preventDefault(); histGo(-1); return; }
+  if (e.key==="Escape"){
+    if (S.polyDraft){ cancelPoly(); return; }
+    if ($("#findbar").classList.contains("show") && (!typing || document.activeElement.closest("#findbar"))){ closeFind(); return; }
+  }
+  if (e.key==="Enter" && S.polyDraft && !typing){ e.preventDefault(); finishPoly(); return; }
   if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="o"){ e.preventDefault(); $("#filePick").click(); }
   if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="a" && S.tool==="select" && !typing){
     const d=activeDoc();
@@ -598,7 +750,8 @@ function renderTabs(){
 function closeDoc(id){
   const i = S.docs.findIndex(d=>d.id===id); if (i<0) return;
   const closing = S.docs[i];
-  S.docs.splice(i,1);
+  S.docs.splice(i,1); HIST.delete(id);
+  if (S.find && S.find.docId===id) S.find=null;
   // Destroy only sources that no remaining document still references (insert-from-tab shares sources).
   closing.sources.forEach(s=>{
     if(!S.docs.some(d=>d.sources.includes(s))){ try{ s.pdf.destroy(); }catch(_){} }
@@ -611,25 +764,37 @@ function closeDoc(id){
 $$("#ribbonTabs .ribbon-tab").forEach(b => b.onclick = () => {
   $$("#ribbonTabs .ribbon-tab").forEach(x=>x.classList.remove("active"));
   b.classList.add("active");
-  ["home","convert","edit","organize","comment","view","form","protect"]
+  ["home","convert","edit","organize","comment","view","form","sign","protect"]
     .forEach(rt => $("#rib-"+rt).style.display = b.dataset.rt===rt ? "flex" : "none");
 });
 
 /* ════════ tools ════════ */
 const TOOL_LABEL = { hand:"Hand", select:"Select", selectText:"Select Text", text:"Add Text", textbox:"Textbox", editText:"Edit Text",
   hl:"Highlight", whiteout:"Whiteout", rect:"Rectangle", ellipse:"Ellipse", line:"Line", arrow:"Arrow",
-  ink:"Pencil", eraser:"Eraser", image:"Place Image" };
+  ink:"Pencil", eraser:"Eraser", image:"Place Image", under:"Underline", strike:"Strikeout", squig:"Squiggly",
+  note:"Sticky Note", poly:"Polygon", cloud:"Cloud", link:"Link", stamp:"Place Stamp", check:"Check Mark",
+  cross:"Cross", date:"Date" };
+const TOOL_HINT = { hl:"Drag across text to highlight it (or click a word).", under:"Drag across text to underline it.",
+  strike:"Drag across text to strike it out.", squig:"Drag across text for a squiggly underline.",
+  note:"Click where you want the sticky note.", poly:"Click to add points. Double-click, Enter, or click the first point to finish. Esc cancels.",
+  cloud:"Click to add points. Double-click or Enter to finish. Esc cancels.", link:"Drag a box over the area that should be clickable.",
+  check:"Click to place a check mark.", cross:"Click to place a cross.", date:"Click to place today's date." };
+const CROSS_TOOLS = ["hl","under","strike","squig","whiteout","rect","ellipse","line","arrow","ink","image","poly","cloud",
+  "link","stamp","note","check","cross"];
 $$(".tool").forEach(b => b.onclick = () => setTool(b.dataset.tool));
 function setTool(t){
+  if (S.polyDraft) cancelPoly();
   S.tool = t; S.pendingImg = (t==="image") ? S.pendingImg : null;
+  if (t!=="stamp") S.pendingStamp = null;
   $$(".tool").forEach(b => b.classList.toggle("on", b.dataset.tool===t));
   $("#stTool").textContent = "Tool: " + (TOOL_LABEL[t]||t);
   const v = $("#viewer"); if (v) v.classList.toggle("hand", t==="hand");
   $$(".overlay").forEach(o => {
     o.dataset.tool = t;
-    o.dataset.cursor = ["hl","whiteout","rect","ellipse","line","arrow","ink","image"].includes(t) ? "cross"
-                     : ["text","textbox","editText"].includes(t) ? "text" : "";
+    o.dataset.cursor = CROSS_TOOLS.includes(t) ? "cross"
+                     : ["text","textbox","editText","date"].includes(t) ? "text" : "";
   });
+  if (TOOL_HINT[t] && activeDoc()) toast(TOOL_HINT[t]);
   const d = activeDoc();
   if (d){ d.pages.forEach((_,i)=>toggleHotspots(d,i,t==="editText")); }
   const vv = $("#viewer");
@@ -702,6 +867,11 @@ function rotateAnnots(doc, pg, dir){ // dir +90 (CW) or -90, BEFORE rot changes
   pg.annots.forEach(a => {
     if (a.pts){ a.pts = a.pts.map(([x,y])=>pt(x,y)); return; }
     if (a.x1!==undefined){ [a.x1,a.y1]=pt(a.x1,a.y1); [a.x2,a.y2]=pt(a.x2,a.y2); return; }
+    if (a.quads){
+      const box=(x,y,w,h)=> dir>0 ? [H-y-h, x, h, w] : [y, W-x-w, h, w];
+      const abs=a.quads.map(([qx,qy,qw,qh])=>box(a.x+qx, a.y+qy, qw, qh));
+      setQuads(a, abs); a.rot=(((a.rot||0)+dir)%360+360)%360; return;
+    }
     if (a.w!==undefined && a.h!==undefined){
       const [nx,ny] = dir>0 ? [H-a.y-a.h, a.x] : [a.y, W-a.x-a.w];
       a.x=nx; a.y=ny; const t=a.w; a.w=a.h; a.h=t; return;
@@ -714,18 +884,20 @@ function rotateAnnots(doc, pg, dir){ // dir +90 (CW) or -90, BEFORE rot changes
 function setDocDeps(){
   const on = !!activeDoc();
   $$(".vdep").forEach(b => b.disabled = !on);
+  updUndoBtns();
 }
 function renderActive(){
   const wrap = $("#viewerwrap"), side = $("#sidebar");
   removeTextLayers();
-  wrap.innerHTML=""; side.innerHTML="";
+  wrap.innerHTML=""; $("#sidebody").innerHTML="";
   const doc = activeDoc(); setDocDeps();
-  if (!doc){ side.classList.remove("show"); renderStart(wrap);
+  if (!doc){ side.classList.remove("show"); renderStart(wrap); closeFind();
     $("#stPage").textContent="No document"; $("#stZoom").textContent=""; $("#goTotal").textContent="/ 0"; return; }
   side.classList.add("show");
+  ensurePageKeys(doc);
 
   const viewer = document.createElement("div");
-  viewer.className = "viewer"+(S.tool==="hand"?" hand":"")+(S.tool==="selectText"?" seltext":""); viewer.id="viewer";
+  viewer.className = "viewer"+(S.tool==="hand"?" hand":"")+(S.tool==="selectText"?" seltext":"")+(S.hlFields?" hlf":""); viewer.id="viewer";
   wrap.appendChild(viewer); enableHandPan(viewer);
 
   const [bw,bh] = dispDims(doc, doc.pages[0]);
@@ -749,11 +921,13 @@ function renderActive(){
     bindOverlay(doc, idx, ov);
     renderAnnots(doc, idx, ov);
     renderMarks(doc, idx, ov);
+    renderFindHits(doc, idx, ov);
     viewer.appendChild(box);
     doc.obs.observe(box);
   });
   viewer.addEventListener("scroll", ()=>scrollSpy(doc,viewer), { passive:true });
-  renderThumbs(doc); updateStatus(doc);
+  renderSide(doc); updateStatus(doc);
+  if ($("#findbar").classList.contains("show") && S.find && S.find.docId!==doc.id) runFind();
   if (S.tool==="editText") doc.pages.forEach((_,i)=>toggleHotspots(doc,i,true));
   if (doc.sel>0){ const t=viewer.children[doc.sel]; if (t) viewer.scrollTop = t.offsetTop-20; }
   markDirty();
@@ -768,11 +942,15 @@ async function paintPage(doc, box){
   const c = document.createElement("canvas"); c.className="pg";
   c.width=vp.width; c.height=vp.height;
   box.insertBefore(c, box.firstChild);
-  try{ await proxy.render({ canvasContext:c.getContext("2d"), viewport:vp }).promise; }catch(_){}
+  const widgets = fillWidgets(await pageAnnots(doc.sources[pg.s], pg.p));
+  // Fillable pages: let the HTML form layer draw field values, so they're not painted twice.
+  const annotationMode = widgets.length ? pdfjsLib.AnnotationMode.ENABLE_FORMS : pdfjsLib.AnnotationMode.ENABLE;
+  try{ await proxy.render({ canvasContext:c.getContext("2d"), viewport:vp, annotationMode }).promise; }catch(_){}
+  if (widgets.length) renderFormLayer(doc, idx, box, widgets);
   if (S.tool==="selectText") addTextLayer(doc, idx, box);
 }
 function renderThumbs(doc){
-  const side=$("#sidebar"); side.innerHTML="";
+  const side=$("#sidebody"); side.innerHTML="";
   if (doc.tobs) doc.tobs.disconnect();
   doc.tobs = new IntersectionObserver(es=>es.forEach(en=>{ if(en.isIntersecting) paintThumb(doc,en.target); }),
     { root:side, rootMargin:"400px" });
@@ -901,7 +1079,7 @@ function enableHandPan(viewer){
 function overlayFor(idx){ return $(`#viewer .pagebox[data-idx="${idx}"] .overlay`); }
 function refreshOverlay(doc, idx){
   const ov=overlayFor(idx); if(!ov) return;
-  renderAnnots(doc, idx, ov); renderMarks(doc, idx, ov);
+  renderAnnots(doc, idx, ov); renderMarks(doc, idx, ov); renderFindHits(doc, idx, ov);
   if (S.tool==="editText") toggleHotspots(doc, idx, true);
   markDirty();
 }
@@ -918,9 +1096,10 @@ function renderAnnots(doc, idx, ov){
 
   pg.annots.forEach(a=>{
     const seld = S.sel && S.sel.docId===doc.id && S.sel.pageIdx===idx && S.sel.ids.has(a.id);
-    if (["ink","line","arrow"].includes(a.t)){
-      const el=document.createElementNS(svgNS, a.t==="ink"?"polyline":"line");
+    if (["ink","line","arrow","poly"].includes(a.t)){
+      const el=document.createElementNS(svgNS, a.t==="line"||a.t==="arrow"?"line":a.t==="poly"?"polygon":"polyline");
       if(a.t==="ink"){ el.setAttribute("points", a.pts.map(p=>p.join(",")).join(" ")); el.setAttribute("fill","none"); }
+      else if(a.t==="poly"){ el.setAttribute("points", polyOutline(a).map(p=>p.join(",")).join(" ")); el.setAttribute("fill","none"); }
       else{ el.setAttribute("x1",a.x1); el.setAttribute("y1",a.y1); el.setAttribute("x2",a.x2); el.setAttribute("y2",a.y2);
         if(a.t==="arrow") el.setAttribute("marker-end",`url(#ah${idx})`); }
       el.setAttribute("stroke",a.stroke); el.setAttribute("stroke-width",a.sw);
@@ -945,9 +1124,28 @@ function renderAnnots(doc, idx, ov){
     } else if (a.t==="whiteout"){
       el.style.left=px(a.x); el.style.top=px(a.y); el.style.width=px(a.w); el.style.height=px(a.h);
       el.style.background="#fff"; el.style.boxShadow="0 0 0 1px rgba(0,0,0,.08) inset";
-    } else if (a.t==="hl"){
+    } else if (a.t==="hl" && !a.quads){
       el.style.left=px(a.x); el.style.top=px(a.y); el.style.width=px(a.w); el.style.height=px(a.h);
       el.style.background=a.color||"#ffe066"; el.style.opacity=".42"; el.style.mixBlendMode="multiply";
+    } else if (MARKUP.has(a.t)){
+      el.classList.add("mk");
+      el.style.left=px(a.x); el.style.top=px(a.y); el.style.width=px(a.w); el.style.height=px(a.h);
+      if(a.t==="hl") el.style.mixBlendMode="multiply";
+      el.innerHTML=markupSVG(a);
+      if(a.cm) el.title=a.cm;
+    } else if (a.t==="note"){
+      el.classList.add("note");
+      el.style.left=px(a.x); el.style.top=px(a.y); el.style.width=px(a.w); el.style.height=px(a.h);
+      el.innerHTML=noteIconSVG(a.color||"#ffd43b");
+      el.title=(a.author||"")+(a.cm?": "+a.cm:"");
+    } else if (a.t==="link"){
+      el.classList.add("lnk");
+      el.style.left=px(a.x); el.style.top=px(a.y); el.style.width=px(a.w); el.style.height=px(a.h);
+      el.title=a.url ? a.url : "Go to page "+((doc.pages.findIndex(p=>p.k===a.k)+1)||"?");
+    } else if (a.t==="stamp"){
+      el.style.left=px(a.x); el.style.top=px(a.y); el.style.width=px(a.w); el.style.height=px(a.h);
+      const im=document.createElement("img"); im.src=a.dataUrl; im.style.width="100%"; im.style.height="100%";
+      im.draggable=false; el.appendChild(im); if(a.cm) el.title=a.cm;
     } else if (a.t==="rect"||a.t==="ellipse"){
       el.style.left=px(a.x); el.style.top=px(a.y); el.style.width=px(a.w); el.style.height=px(a.h);
       el.style.border=`${a.sw*z}px solid ${a.stroke}`;
@@ -958,7 +1156,7 @@ function renderAnnots(doc, idx, ov){
       im.draggable=false; el.appendChild(im);
     }
     if (seld && S.sel.ids.size===1){
-      if(["whiteout","hl","rect","ellipse","img"].includes(a.t)) addBoxHandles(doc, idx, a, el);
+      if(["whiteout","rect","ellipse","img","link","stamp"].includes(a.t) || (a.t==="hl"&&!a.quads)) addBoxHandles(doc, idx, a, el);
       else if(a.t==="text") addTextHandle(doc, idx, a, el);
     }
     bindAnnotEvents(doc, idx, a, el);
@@ -1096,6 +1294,15 @@ function bindAnnotEvents(doc, idx, a, el){
   if (a.t==="text"){
     el.addEventListener("dblclick", e=>{ e.stopPropagation(); editTextAnnot(doc, idx, a, el); });
   }
+  // Click (not drag) on links follows them in Hand mode; comments open in the comment list.
+  let down=null;
+  el.addEventListener("mousedown", e=>{ down=[e.clientX,e.clientY]; }, true);
+  el.addEventListener("click", e=>{
+    if(!down || Math.hypot(e.clientX-down[0], e.clientY-down[1])>4) return;
+    if(a.t==="link" && (S.tool==="hand"||S.tool==="selectText")){ e.stopPropagation(); followLink(doc, a); return; }
+    if(COMMENTABLE.has(a.t) && S.tool!=="eraser"){ focusComment(doc, idx, a.id, a.t==="note", a.t==="note"||S.tool==="hand"); }
+  });
+  if (a.t==="link") el.addEventListener("dblclick", e=>{ e.stopPropagation(); linkDialog(doc, idx, a); });
 }
 function syncFontUI(a){
   if (a.t==="text"){ $("#fFam").value=a.fam; $("#fSize").value=a.size; $("#fColor").value=a.color;
@@ -1171,22 +1378,66 @@ function bindOverlay(doc, idx, ov){
       return;
     }
     if (S.tool==="image" && S.pendingImg){
-      const im=new Image();
-      im.onload=()=>{ const w=180, h=w*im.height/im.width;
-        pg.annots.push({ id:++aid, t:"img", x, y, w, h, dataUrl:S.pendingImg.url, fmt:S.pendingImg.fmt });
+      const im=new Image(), pi=S.pendingImg;
+      im.onload=()=>{ const w=pi.w||180, h=w*im.height/im.width;
+        pg.annots.push({ id:++aid, t:"img", x:pi.w?x-w/2:x, y:pi.w?y-h/2:y, w, h, dataUrl:pi.url, fmt:pi.fmt, sig:pi.sig||undefined });
         S.pendingImg=null; setTool("select"); refreshOverlay(doc, idx);
-        toast("Image placed — drag to move, corner handle to resize."); };
-      im.src=S.pendingImg.url; return;
+        toast(pi.sig?"Signed — drag to move, handles to resize.":"Image placed — drag to move, corner handle to resize."); };
+      im.src=pi.url; return;
     }
-    if (["hl","whiteout","rect","ellipse"].includes(S.tool)){
+    if (S.tool==="stamp" && S.pendingStamp){
+      const st=S.pendingStamp;
+      const a={ id:++aid, t:"stamp", x:x-st.w/2, y:y-st.h/2, w:st.w, h:st.h, dataUrl:st.url, fmt:"png",
+        label:st.label, cm:"", author:author(), date:new Date().toISOString(), replies:[] };
+      pg.annots.push(a); refreshOverlay(doc, idx);
+      if(!e.shiftKey){ S.pendingStamp=null; setTool("select"); S.sel={docId:doc.id,pageIdx:idx,ids:new Set([a.id])}; refreshOverlay(doc, idx); }
+      toast(e.shiftKey?"Stamp placed — keep clicking to place more.":"Stamp placed. Tip: hold Shift to place several.");
+      return;
+    }
+    if (S.tool==="note"){
+      const a={ id:++aid, t:"note", x:x-11, y:y-11, w:22, h:22, color:"#ffd43b", cm:"", author:author(),
+        date:new Date().toISOString(), replies:[] };
+      pg.annots.push(a); refreshOverlay(doc, idx); focusComment(doc, idx, a.id, true, true);
+      return;
+    }
+    if (S.tool==="check"||S.tool==="cross"){
+      const s=Math.max(6,f.size)/14*10, c=f.color, sw=Math.max(1.5,s*0.18);
+      if(S.tool==="check") pg.annots.push({id:++aid,t:"ink",pts:[[x-s*.55,y],[x-s*.15,y+s*.45],[x+s*.6,y-s*.5]],stroke:c,sw});
+      else { const g=++gid;
+        pg.annots.push({id:++aid,t:"line",x1:x-s*.45,y1:y-s*.45,x2:x+s*.45,y2:y+s*.45,stroke:c,sw,grp:g});
+        pg.annots.push({id:++aid,t:"line",x1:x+s*.45,y1:y-s*.45,x2:x-s*.45,y2:y+s*.45,stroke:c,sw,grp:g}); }
+      refreshOverlay(doc, idx); return;
+    }
+    if (S.tool==="date"){
+      pg.annots.push({ id:++aid, t:"text", x, y:y-f.size*0.8, text:new Date().toLocaleDateString(), size:f.size, fam:f.fam,
+        color:f.color, bold:f.bold, ital:f.ital, lh:f.lh, box:false });
+      refreshOverlay(doc, idx); return;
+    }
+    if (S.tool==="poly"||S.tool==="cloud"){ e.preventDefault(); polyClick(doc, idx, ov, x, y); return; }
+    if (MARKUP.has(S.tool)){
+      const t=S.tool;
+      dragBox(ov, z, x, y, async (bx,by,bw,bh)=>{
+        const ex = bx===x ? bx+bw : bx, ey = by===y ? by+bh : by;
+        await createMarkup(doc, idx, t, x, y, ex, ey, bw<3&&bh<3);
+      }, t==="hl"?"rgba(255,224,102,.25)":"rgba(123,108,255,.10)", null, false, true);
+      return;
+    }
+    if (S.tool==="link"){
+      dragBox(ov, z, x, y, (bx,by,bw,bh)=>{
+        if(bw<6||bh<6){ toast("Drag a box over the area that should be clickable."); return; }
+        const a={ id:++aid, t:"link", x:bx, y:by, w:bw, h:bh, k:null, url:null };
+        linkDialog(doc, idx, a, true);
+      }, "rgba(28,126,214,.10)", "#1c7ed6", false);
+      return;
+    }
+    if (["whiteout","rect","ellipse"].includes(S.tool)){
       dragBox(ov, z, x, y, (bx,by,bw,bh)=>{
         if(bw<3||bh<3) return;
         const base={ id:++aid, x:bx, y:by, w:bw, h:bh };
-        if(S.tool==="hl") pg.annots.push({...base, t:"hl", color:"#ffe066"});
-        else if(S.tool==="whiteout") pg.annots.push({...base, t:"whiteout"});
+        if(S.tool==="whiteout") pg.annots.push({...base, t:"whiteout"});
         else pg.annots.push({...base, t:S.tool, stroke:f.color, sw:f.sw});
         refreshOverlay(doc, idx);
-      }, S.tool==="hl"?"rgba(255,224,102,.45)":S.tool==="whiteout"?"rgba(255,255,255,.9)":"transparent",
+      }, S.tool==="whiteout"?"rgba(255,255,255,.9)":"transparent",
          S.tool==="rect"||S.tool==="ellipse"?f.color:null, S.tool==="ellipse");
       return;
     }
@@ -1216,7 +1467,7 @@ function bindOverlay(doc, idx, ov){
     }
   });
 }
-function dragBox(ov, z, x0, y0, onDone, fill, stroke, round){
+function dragBox(ov, z, x0, y0, onDone, fill, stroke, round, allowClick){
   const tmp=document.createElement("div");
   tmp.style.cssText=`position:absolute;pointer-events:none;background:${fill||"transparent"};`+
     (stroke?`border:2px solid ${stroke};`:"")+(round?"border-radius:50%;":"");
@@ -1227,7 +1478,7 @@ function dragBox(ov, z, x0, y0, onDone, fill, stroke, round){
     tmp.style.left=bx*z+"px"; tmp.style.top=by*z+"px"; tmp.style.width=bw*z+"px"; tmp.style.height=bh*z+"px";
     tmp._b=[bx,by,bw,bh]; };
   const mu=()=>{ window.removeEventListener("mousemove",mm); window.removeEventListener("mouseup",mu);
-    const b=tmp._b; tmp.remove(); if(b) onDone(...b); };
+    const b=tmp._b; tmp.remove(); if(b) onDone(...b); else if(allowClick) onDone(x0,y0,0,0); };
   window.addEventListener("mousemove",mm); window.addEventListener("mouseup",mu);
 }
 
@@ -1243,8 +1494,9 @@ async function toggleHotspots(doc, idx, on){
   const tc=src.textCache[pg.p];
   const vp=proxy.getViewport({ scale:1, rotation:proxy.rotate%360 });
   const z=doc.zoom;
-  tc.items.forEach(item=>{
+  tc.items.forEach((item,ii)=>{
     if(!item.str || !item.str.trim()) return;
+    if(pg.rep && pg.rep.includes(ii)) return; // already replaced by an edit
     const tr=pdfjsLib.Util.transform(vp.transform, item.transform);
     const fontH=Math.hypot(tr[2],tr[3]);
     if(fontH<3) return;
@@ -1260,6 +1512,7 @@ async function toggleHotspots(doc, idx, on){
       const fam=/serif/i.test(style.fontFamily||"")&&!/sans/i.test(style.fontFamily||"")?"Times"
         :/mono|courier/i.test(style.fontFamily||"")?"Courier":"Helvetica";
       pg.annots.push({ id:++aid, t:"whiteout", x:x-1, y:yTop-1, w:Math.max(6,w)+2, h:fontH*1.25+2 });
+      (pg.rep=pg.rep||[]).push(ii);
       const a={ id:++aid, t:"text", x, y:yTop, text:item.str, size:Math.round(fontH*0.95),
         fam, color:fontState().color, bold:false, ital:false, box:false };
       pg.annots.push(a);
@@ -1325,6 +1578,10 @@ const ACT = {
     toast(n?`Removed blank lines from ${n} text block${n>1?"s":""}.`:"No blank lines to remove.");
   },
   watermark: wmDialog, headfoot: hfDialog, bates: batesDialog,
+  undo: ()=>histGo(-1), redo: ()=>histGo(1), find: ()=>openFind(),
+  panelPages: ()=>showPanel("pages"), panelBookmarks: ()=>showPanel("bookmarks"), panelComments: ()=>showPanel("comments"),
+  toggleFlatten: ()=>setFlatten(!S.flatten), hlFields: ()=>toggleFieldHighlight(),
+  stamp: ()=>stampDialog(), signature: ()=>sigDialog("sig"), initials: ()=>sigDialog("ini"),
   ocrInfo: ()=>toast("OCR needs a text-recognition engine that can't load in this sandbox — it ships with the server-assisted version (free Tesseract)."),
   officeInfo: ()=>toast("PDF → Word/Excel needs server-side conversion (free LibreOffice). Coming with the server build — everything else here stays client-side."),
   formInfo: ()=>toast("Form designer is on the roadmap — filling existing form fields visually works today via Add Text."),
@@ -1597,32 +1854,58 @@ const ptMap = (R,pw,ph,x,y)=> R===90?[y,x] : R===180?[pw-x,y] : R===270?[pw-y,ph
 const rcMap = (R,pw,ph,x,y,w,h)=> R===90?[y,x,h,w] : R===180?[pw-x-w,y,w,h] : R===270?[pw-y-h,ph-x-w,h,w] : [x,ph-y-h,w,h];
 
 async function buildOutput(out, doc, fonts, onlyIdx){
+  ensurePageKeys(doc);
   // load each source once
   const libSrcs = [];
   for(const s of doc.sources) libSrcs.push(await PDFDocument.load(s.bytes,{ignoreEncryption:true}));
+  applyFormValues(doc, libSrcs);
   const idxs = onlyIdx!==undefined ? [onlyIdx] : doc.pages.map((_,i)=>i);
+  // Copy every source's pages in one batch so shared objects (form fields, fonts) are copied once.
+  const pre = new Map(); // "s:p" -> [copied pages…]
+  const want = new Map();
+  idxs.forEach(i=>{ const pg=doc.pages[i]; if(pg.blank) return;
+    if(!want.has(pg.s)) want.set(pg.s, []); const l=want.get(pg.s); if(!l.includes(pg.p)) l.push(pg.p); });
+  for(const [s,list] of want){
+    const cps=await out.copyPages(libSrcs[s], list);
+    list.forEach((p,j)=>pre.set(s+":"+p, [cps[j]]));
+  }
+  const refs={}, ctx={ flatten:S.flatten, links:[] };
   for(const i of idxs){
     const pg=doc.pages[i];
     let page;
     if(pg.blank){ page=out.addPage([pg.w,pg.h]); page.setRotation(degrees(pg.rot)); }
     else{
-      const [cp]=await out.copyPages(libSrcs[pg.s],[pg.p]);
+      const q=pre.get(pg.s+":"+pg.p);
+      const cp = q && q.length ? q.shift() : (await out.copyPages(libSrcs[pg.s],[pg.p]))[0]; // repeats get a fresh copy
       cp.setRotation(degrees(((cp.getRotation().angle+pg.rot)%360+360)%360));
       page=out.addPage(cp);
     }
-    await drawAnnotsOnPage(out, page, doc, pg, fonts);
+    refs[pg.k]=page.ref;
+    await drawAnnotsOnPage(out, page, doc, pg, fonts, ctx);
     drawMarksOnPage(page, doc, i, fonts);
   }
+  ctx.links.forEach(L=>writeLink(out, L, refs));
+  rebuildAcroForm(out, libSrcs);
+  return refs;
 }
 function pickFont(fonts, fam, bold, ital){
   const k=(fam||"Helvetica")+(bold?"B":"")+(ital?"I":"");
   return fonts[k]||fonts.Helvetica;
 }
-async function drawAnnotsOnPage(out, page, doc, pg, fonts){
+async function drawAnnotsOnPage(out, page, doc, pg, fonts, ctx){
+  ctx = ctx || { flatten:true, links:[] };
   const R=((page.getRotation().angle)%360+360)%360;
   const {width:pw, height:ph}=page.getSize();
   for(const a of pg.annots){
     try{
+      if(a.t==="link"){ ctx.links.push({page, R, pw, ph, a}); continue; }
+      if(COMMENTABLE.has(a.t)){
+        if(ctx.flatten) await flattenComment(out, page, R, pw, ph, a);
+        else await writeCommentAnnot(out, page, R, pw, ph, a);
+        continue;
+      }
+      if(a.t==="poly"){ const [r,g,b]=hex2rgb(a.stroke);
+        drawPathPDF(page, R, pw, ph, polyOutline(a), true, rgb(r,g,b), a.sw); continue; }
       if(a.t==="whiteout"){ const [x,y,w,h]=rcMap(R,pw,ph,a.x,a.y,a.w,a.h);
         page.drawRectangle({x,y,width:w,height:h,color:rgb(1,1,1)}); continue; }
       if(a.t==="hl"){ const [x,y,w,h]=rcMap(R,pw,ph,a.x,a.y,a.w,a.h); const [r,g,b]=hex2rgb(a.color||"#ffe066");
@@ -1641,16 +1924,11 @@ async function drawAnnotsOnPage(out, page, doc, pg, fonts){
             end:{x:x2+Math.cos(h)*L,y:y2+Math.sin(h)*L},thickness:a.sw,color:rgb(r,g,b)}));
         } continue; }
       if(a.t==="ink"){ const [r,g,b]=hex2rgb(a.stroke);
-        for(let i=1;i<a.pts.length;i++){
-          const [x1,y1]=ptMap(R,pw,ph,a.pts[i-1][0],a.pts[i-1][1]);
-          const [x2,y2]=ptMap(R,pw,ph,a.pts[i][0],a.pts[i][1]);
-          page.drawLine({start:{x:x1,y:y1},end:{x:x2,y:y2},thickness:a.sw,color:rgb(r,g,b)});
-        } continue; }
+        drawPathPDF(page, R, pw, ph, a.pts, false, rgb(r,g,b), a.sw); continue; }
       if(a.t==="img"){
         const bytes=await fetch(a.dataUrl).then(r=>r.arrayBuffer());
         const img = a.fmt==="png" ? await out.embedPng(bytes) : await out.embedJpg(bytes);
-        const [x,y,w,h]=rcMap(R,pw,ph,a.x,a.y,a.w,a.h);
-        page.drawImage(img,{x,y,width:w,height:h}); continue; }
+        drawImageDisp(page,R,pw,ph,img,a.x,a.y,a.w,a.h); continue; }
       if(a.t==="text"){
         const font=await fonts.get(a.fam,a.bold,a.ital);
         const [r,g,b]=hex2rgb(a.color);
@@ -1742,9 +2020,11 @@ async function saveDoc(){
   try{
     const out=await PDFDocument.create();
     const fonts=await embedFonts(out);
-    await buildOutput(out,d,fonts);
+    const refs=await buildOutput(out,d,fonts);
+    writeOutline(out, d.outline, k=>refs[k]);
     dlBlob(new Blob([await out.save()],{type:"application/pdf"}), d.name.replace(/\.pdf$/i,"")+"-edited.pdf");
-    toast("Saved ✓ — all edits, marks and annotations baked in.");
+    toast(S.flatten ? "Saved ✓ — edits and comments burned into the pages."
+                    : "Saved ✓ — comments kept as real PDF annotations (editable in Foxit/Acrobat).");
   }catch(err){ console.error(err); toast("Couldn't save — the source PDF may be encrypted."); }
   busy(false);
 }
@@ -1766,7 +2046,12 @@ async function mergeAll(){
   try{
     const out=await PDFDocument.create();
     const fonts=await embedFonts(out);
-    for(const d of S.docs) await buildOutput(out,d,fonts);
+    const refs={}, nodes=[];
+    for(const d of S.docs){
+      const r=await buildOutput(out,d,fonts); Object.assign(refs, r);
+      nodes.push({ title:d.name.replace(/\.pdf$/i,""), k:d.pages[0]&&d.pages[0].k, kids:d.outline||[] });
+    }
+    writeOutline(out, nodes, k=>refs[k]);
     dlBlob(new Blob([await out.save()],{type:"application/pdf"}), "targettool-merged.pdf");
     toast(`Merged ${S.docs.length} documents ✓`);
   }catch(err){ console.error(err); toast("Merge failed — one file may be encrypted."); }
@@ -1781,7 +2066,8 @@ async function saveAll(){
     for(const d of S.docs){
       const out=await PDFDocument.create();
       const fonts=await embedFonts(out);
-      await buildOutput(out,d,fonts);
+      const refs=await buildOutput(out,d,fonts);
+      writeOutline(out, d.outline, k=>refs[k]);
       let name=d.name.replace(/\.pdf$/i,"")+".pdf";
       if(used[name]){ used[name]++; name=name.replace(/\.pdf$/i,"")+" ("+used[name]+").pdf"; } else used[name]=1;
       zip.file(name, await out.save());
@@ -1837,7 +2123,8 @@ function setSaved(state){
   };
   const [txt,col]=map[state]||map.none; el.textContent=txt; el.style.color=col;
 }
-function markDirty(){ if(!bootReady||!persistOK) return; dirty=true; setSaved("saving"); scheduleFlush(); }
+function markDirty(){ scheduleHist(); schedulePanel();
+  if(!bootReady||!persistOK) return; dirty=true; setSaved("saving"); scheduleFlush(); }
 function scheduleFlush(){ clearTimeout(flushT); flushT=setTimeout(saveSession, 1200); }
 
 function serializeSession(){
@@ -1848,7 +2135,7 @@ function serializeSession(){
       name:d.name,
       srcBytes: d.sources.map(s=>s.bytes),
       pages: d.pages.map(p=>({ ...p, annots:(p.annots||[]).map(a=>({...a})) })),
-      marks: d.marks, sel:d.sel, fit:d.fit
+      marks: d.marks, sel:d.sel, fit:d.fit, outline:d.outline||[], form:d.form||{}
     }))
   };
 }
@@ -1879,11 +2166,16 @@ async function doRestore(data){
         if(typeof a.id==="number"&&a.id>maxAid) maxAid=a.id;
         if(typeof a.grp==="number"&&a.grp>maxGid) maxGid=a.grp;
       }));
-      S.docs.push({
+      (sd.pages||[]).forEach(p=>{ const n=parseInt(String(p.k||"").slice(1)); if(n>pk) pk=n; });
+      const walk=l=>(l||[]).forEach(b=>{ const n=parseInt(String(b.id||"").slice(1)); if(n>bid) bid=n; walk(b.kids); });
+      walk(sd.outline);
+      const nd={
         id:"d"+(++uid), name:sd.name, sources,
         pages: sd.pages||[], zoom:1, fit:sd.fit||"width", sel:sd.sel||0,
-        obs:null, tobs:null, marks: sd.marks||{wm:null,hf:null,bates:null}
-      });
+        obs:null, tobs:null, marks: sd.marks||{wm:null,hf:null,bates:null},
+        outline: sd.outline||[], form: sd.form||{}
+      };
+      ensurePageKeys(nd); S.docs.push(nd); histInit(nd);
     }
     aid=Math.max(aid,maxAid)+1; gid=Math.max(gid,maxGid);
     const ai=data.activeIndex;
@@ -1920,8 +2212,1001 @@ document.addEventListener("visibilitychange", ()=>{
 // Backstop periodic save
 setInterval(()=>{ if(bootReady&&persistOK&&dirty&&!saving) saveSession(); }, 8000);
 
+/* ════════════════════════════════════════════════════════════════
+   TIER 1 — undo/redo · side panels · bookmarks · links · find & replace
+            · text markup · polygon/cloud · comments · stamps · fill & sign
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── stable page keys (bookmarks & links survive reorder/delete) ── */
+function ensurePageKeys(doc){
+  const seen=new Set();
+  doc.pages.forEach(p=>{ if(!p.k || seen.has(p.k)) p.k="p"+(++pk); seen.add(p.k); });
+}
+const pageIndexOfKey=(doc,k)=>k?doc.pages.findIndex(p=>p.k===k):-1;
+const fmtDate=iso=>{ const d=new Date(iso); return isNaN(d)?"":d.toLocaleString([], {dateStyle:"medium", timeStyle:"short"}); };
+const famGuess=ff=>{ ff=ff||""; return /serif/i.test(ff)&&!/sans/i.test(ff)?"Times":/mono|courier/i.test(ff)?"Courier":"Helvetica"; };
+
+/* ── undo / redo (snapshot per document) ── */
+const HIST=new Map(), HMAX=60; let histT=null, mouseHeld=false;
+document.addEventListener("mousedown",()=>{ mouseHeld=true; },true);
+window.addEventListener("mouseup",()=>{ mouseHeld=false; },true);
+const snapReplacer=(k,v)=> k==="open" ? undefined : v;   // expanding a bookmark isn't an edit
+function docSnap(d){ return JSON.stringify({pages:d.pages, marks:d.marks, outline:d.outline||[], form:d.form||{}}, snapReplacer); }
+function histInit(d){ HIST.set(d.id,{st:[docSnap(d)],i:0}); updUndoBtns(); }
+function scheduleHist(){ clearTimeout(histT); histT=setTimeout(()=>histCommit(false),280); }
+function histCommit(force){
+  if(!force && (mouseHeld || document.activeElement?.isContentEditable)){ scheduleHist(); return; }
+  for(const d of S.docs){
+    const s=docSnap(d); const h=HIST.get(d.id);
+    if(!h){ HIST.set(d.id,{st:[s],i:0}); continue; }
+    if(h.st[h.i]===s) continue;
+    h.st.splice(h.i+1); h.st.push(s);
+    if(h.st.length>HMAX) h.st.shift();
+    h.i=h.st.length-1;
+  }
+  updUndoBtns();
+}
+function histGo(dir){
+  const d=activeDoc(); if(!d) return;
+  if(document.activeElement?.isContentEditable) document.activeElement.blur(); // commit text being typed
+  clearTimeout(histT); histCommit(true);
+  const h=HIST.get(d.id); if(!h) return;
+  const j=h.i+dir;
+  if(j<0||j>=h.st.length){ toast(dir<0?"Nothing to undo.":"Nothing to redo."); return; }
+  h.i=j; const o=JSON.parse(h.st[j]);
+  d.pages=o.pages; d.marks=o.marks; d.outline=o.outline||[]; d.form=o.form||{};
+  d.sel=Math.max(0,Math.min(d.sel,d.pages.length-1)); S.sel=null;
+  if(S.polyDraft) cancelPoly();
+  renderActive(); updUndoBtns();
+  if(S.find && $("#findbar").classList.contains("show")) runFind(true);
+  toast(dir<0?"Undone.":"Redone.");
+}
+function updUndoBtns(){
+  const u=$("#btnUndo"), r=$("#btnRedo"); if(!u) return;
+  const d=activeDoc(), h=d&&HIST.get(d.id);
+  u.disabled=!(h&&h.i>0); r.disabled=!(h&&h.i<h.st.length-1);
+}
+
+/* ── side panels ── */
+$$("#sidetabs button").forEach(b=>b.onclick=()=>showPanel(b.dataset.panel));
+function showPanel(p){
+  S.panel=p; $$("#sidetabs button").forEach(b=>b.classList.toggle("on",b.dataset.panel===p));
+  const d=activeDoc(); if(d) renderSide(d);
+}
+function renderSide(doc){
+  const side=$("#sidebar"), wide=S.panel!=="pages";
+  if(side.classList.contains("wide")!==wide){
+    side.classList.toggle("wide",wide);
+    if(doc.fit!=="none"){ renderActive(); return; }   // viewer width changed — refit
+  }
+  if(S.panel!=="pages" && doc.tobs) doc.tobs.disconnect();
+  if(S.panel==="bookmarks") renderBookmarks(doc);
+  else if(S.panel==="comments") renderComments(doc);
+  else renderThumbs(doc);
+}
+let panelT=null;
+function schedulePanel(){
+  if(S.panel==="pages") return;
+  clearTimeout(panelT); panelT=setTimeout(()=>{
+    const d=activeDoc(); if(!d) return;
+    const ae=document.activeElement;
+    if(ae && ae.closest && ae.closest("#sidebody") && /INPUT|TEXTAREA/.test(ae.tagName)) return; // don't yank the field being typed in
+    renderSide(d);
+  },200);
+}
+function promptModal(title,label,val,cb){
+  modal(`<h2>${esc(title)}</h2><label>${esc(label)}</label><input type="text" id="pmV" value="${esc(val||"")}">`,
+    m=>{ cb(m.querySelector("#pmV").value.trim()); });
+  $("#mOk").textContent="OK";
+  const inp=$("#pmV"); setTimeout(()=>{ inp.focus(); inp.select(); },0);
+  inp.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#mOk").click(); } };
+}
+
+/* ── bookmarks ── */
+async function readOutline(src, doc){
+  let ol=null; try{ ol=await src.pdf.getOutline(); }catch(_){}
+  if(!ol || !ol.length) return [];
+  const conv=async items=>{ const out=[];
+    for(const it of items){
+      let pi=null;
+      try{ let dest=it.dest; if(typeof dest==="string") dest=await src.pdf.getDestination(dest);
+        if(Array.isArray(dest) && dest[0]!=null) pi = typeof dest[0]==="number" ? dest[0] : await src.pdf.getPageIndex(dest[0]); }catch(_){}
+      const pg = pi!=null ? doc.pages.find(p=>!p.blank && p.s===0 && p.p===pi) : null;
+      out.push({ id:"b"+(++bid), title:((it.title||"").trim())||"Untitled", k:pg?pg.k:null, url:it.url||null,
+        open:false, kids: it.items&&it.items.length ? await conv(it.items) : [] });
+    } return out; };
+  try{ return await conv(ol); }catch(_){ return []; }
+}
+function bmFind(list, id, parent=null){
+  for(let i=0;i<list.length;i++){ const n=list[i];
+    if(n.id===id) return {list, i, node:n, parent};
+    const r=bmFind(n.kids||[], id, n); if(r) return r; }
+  return null;
+}
+function renderBookmarks(doc){
+  const body=$("#sidebody"); doc.outline=doc.outline||[];
+  const sel = S.bmSel && bmFind(doc.outline,S.bmSel) ? S.bmSel : null, dis=sel?"":"disabled";
+  const rows=[];
+  const walk=(list,depth)=>list.forEach(n=>{
+    const pi=pageIndexOfKey(doc,n.k), has=n.kids&&n.kids.length;
+    rows.push(`<div class="bmrow${n.id===sel?" sel":""}" data-bid="${n.id}" style="padding-left:${6+depth*14}px" title="${esc(n.title)}">`+
+      `<span class="tw" data-tw="${has?1:""}">${has?(n.open?"▾":"▸"):""}</span><span class="bt">${esc(n.title)}</span>`+
+      `<span class="bp">${pi>=0?"p."+(pi+1):n.url?"web":"—"}</span></div>`);
+    if(has && n.open) walk(n.kids, depth+1);
+  });
+  walk(doc.outline,0);
+  body.innerHTML=`<div class="phead tools"><b>Bookmarks</b>
+    <button class="pbtn" data-bm="add" title="Bookmark the current page">＋</button>
+    <button class="pbtn" data-bm="child" title="Add a child bookmark" ${dis}>↳</button>
+    <button class="pbtn" data-bm="here" title="Point to the current page" ${dis}>⌖</button>
+    <button class="pbtn" data-bm="ren" title="Rename" ${dis}>✎</button>
+    <button class="pbtn" data-bm="up" title="Move up" ${dis}>↑</button>
+    <button class="pbtn" data-bm="down" title="Move down" ${dis}>↓</button>
+    <button class="pbtn" data-bm="out" title="Outdent" ${dis}>⇤</button>
+    <button class="pbtn" data-bm="in" title="Indent" ${dis}>⇥</button>
+    <button class="pbtn" data-bm="del" title="Delete" ${dis}>✕</button></div>`+
+    (rows.length? rows.join("") : `<div class="pempty">No bookmarks yet. Go to a page and click <b>＋</b>. Bookmarks are written into the PDF's navigation panel when you save.</div>`);
+  body.querySelectorAll("[data-bm]").forEach(b=>b.onclick=()=>bmAction(doc, b.dataset.bm));
+  body.querySelectorAll(".bmrow").forEach(r=>{
+    r.onclick=e=>{ const f=bmFind(doc.outline, r.dataset.bid); if(!f) return;
+      if(e.target.dataset.tw){ f.node.open=!f.node.open; renderBookmarks(doc); return; }
+      S.bmSel=f.node.id; renderBookmarks(doc);
+      const pi=pageIndexOfKey(doc,f.node.k);
+      if(pi>=0) selectPage(doc,pi,true);
+      else if(f.node.url) toast("Web bookmark: "+f.node.url);
+      else toast("This bookmark's page was removed — select it and click ⌖ to point it at the current page.");
+    };
+    r.ondblclick=()=>{ S.bmSel=r.dataset.bid; bmAction(doc,"ren"); };
+  });
+}
+function bmAction(doc, act){
+  doc.outline=doc.outline||[];
+  const f=S.bmSel?bmFind(doc.outline,S.bmSel):null, pg=doc.pages[doc.sel];
+  const done=()=>{ renderBookmarks(doc); markDirty(); };
+  if(act==="add"||act==="child"){
+    promptModal(act==="child"?"Add Child Bookmark":"Add Bookmark","Title",`Page ${doc.sel+1}`, t=>{
+      const n={id:"b"+(++bid), title:t||`Page ${doc.sel+1}`, k:pg.k, url:null, open:true, kids:[]};
+      if(act==="child"&&f){ (f.node.kids=f.node.kids||[]).push(n); f.node.open=true; }
+      else if(f) f.list.splice(f.i+1,0,n); else doc.outline.push(n);
+      S.bmSel=n.id; done(); toast(`Bookmarked page ${doc.sel+1}.`);
+    }); return;
+  }
+  if(!f) return;
+  if(act==="ren"){ promptModal("Rename Bookmark","Title",f.node.title,t=>{ if(t){ f.node.title=t; done(); } }); return; }
+  if(act==="here"){ f.node.k=pg.k; f.node.url=null; done(); toast(`Bookmark now points to page ${doc.sel+1}.`); return; }
+  if(act==="del"){ f.list.splice(f.i,1); S.bmSel=null; done(); return; }
+  if(act==="up"&&f.i>0){ [f.list[f.i-1],f.list[f.i]]=[f.list[f.i],f.list[f.i-1]]; done(); return; }
+  if(act==="down"&&f.i<f.list.length-1){ [f.list[f.i+1],f.list[f.i]]=[f.list[f.i],f.list[f.i+1]]; done(); return; }
+  if(act==="in"&&f.i>0){ const prev=f.list[f.i-1]; f.list.splice(f.i,1); (prev.kids=prev.kids||[]).push(f.node); prev.open=true; done(); return; }
+  if(act==="out"&&f.parent){ const g=bmFind(doc.outline,f.parent.id); f.list.splice(f.i,1); g.list.splice(g.i+1,0,f.node); done(); return; }
+}
+function writeOutline(out, nodes, refOf){
+  if(!nodes||!nodes.length) return;
+  const {PDFName,PDFHexString,PDFString,PDFNull}=PDFLib, ctx=out.context;
+  const rootRef=ctx.nextRef();
+  const build=(list,parentRef)=>{
+    const refs=list.map(()=>ctx.nextRef()); let count=0;
+    list.forEach((n,i)=>{
+      const o={ Title:PDFHexString.fromText(n.title||"Untitled"), Parent:parentRef };
+      if(i>0) o.Prev=refs[i-1];
+      if(i<list.length-1) o.Next=refs[i+1];
+      const pr=n.k?refOf(n.k):null;
+      if(pr) o.Dest=[pr, PDFName.of("XYZ"), PDFNull, PDFNull, PDFNull];
+      else if(n.url) o.A={ S:PDFName.of("URI"), URI:PDFString.of(asciiUrl(n.url)) };
+      if(n.kids&&n.kids.length){ const r=build(n.kids, refs[i]); o.First=r.first; o.Last=r.last; o.Count=r.count; count+=r.count; }
+      ctx.assign(refs[i], ctx.obj(o)); count++;
+    });
+    return { first:refs[0], last:refs[refs.length-1], count };
+  };
+  const r=build(nodes, rootRef);
+  ctx.assign(rootRef, ctx.obj({ Type:"Outlines", First:r.first, Last:r.last, Count:r.count }));
+  out.catalog.set(PDFName.of("Outlines"), rootRef);
+  out.catalog.set(PDFName.of("PageMode"), PDFName.of("UseOutlines"));
+}
+const asciiUrl=u=>/^[\x20-\x7e]*$/.test(u)?u:encodeURI(u);
+
+/* ── links ── */
+function linkDialog(doc, idx, a, isNew){
+  const N=doc.pages.length, cur=a.k?pageIndexOfKey(doc,a.k)+1:Math.min(N, doc.sel+2);
+  modal(`<h2>${isNew?"Add":"Edit"} Link</h2>
+    <label style="display:flex;gap:8px;align-items:center;color:var(--ink);margin-top:4px"><input type="radio" name="lk" value="page" ${a.url?"":"checked"} style="width:auto"> Go to page
+      <input type="number" id="lkP" min="1" max="${N}" value="${cur||1}" style="width:72px"> <span style="color:var(--ink-dim)">of ${N}</span></label>
+    <label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="radio" name="lk" value="url" ${a.url?"checked":""} style="width:auto"> Open a web address</label>
+    <input type="text" id="lkU" placeholder="https://example.com" value="${esc(a.url||"")}">`, m=>{
+    const kind=m.querySelector('input[name="lk"]:checked').value;
+    if(kind==="url"){
+      let u=m.querySelector("#lkU").value.trim(); if(!u){ toast("Type a web address."); return false; }
+      if(!/^[a-z][a-z0-9+.-]*:/i.test(u)) u="https://"+u;
+      if(!/^(https?|mailto):/i.test(u)){ toast("Only http, https and mailto links are allowed."); return false; }
+      a.url=u; a.k=null;
+    } else {
+      const n=parseInt(m.querySelector("#lkP").value);
+      if(!(n>=1&&n<=N)){ toast(`Enter a page from 1 to ${N}.`); return false; }
+      a.k=doc.pages[n-1].k; a.url=null;
+    }
+    if(isNew) doc.pages[idx].annots.push(a);
+    refreshOverlay(doc, idx); toast(isNew?"Link added — switch to the Hand tool to try it.":"Link updated.");
+  });
+  $("#mOk").textContent=isNew?"Add Link":"Save";
+  $("#lkU").onfocus=()=>{ $('input[name="lk"][value="url"]').checked=true; };
+  $("#lkP").onfocus=()=>{ $('input[name="lk"][value="page"]').checked=true; };
+}
+function followLink(doc,a){
+  if(a.url){ window.open(a.url,"_blank","noopener"); return; }
+  const pi=pageIndexOfKey(doc,a.k); if(pi>=0) selectPage(doc,pi,true); else toast("That page no longer exists.");
+}
+function writeLink(out, L, refs){
+  const {PDFName,PDFString,PDFNull}=PDFLib, {page,R,pw,ph,a}=L;
+  const [x,y,w,h]=rcMap(R,pw,ph,a.x,a.y,a.w,a.h);
+  const o={ Type:"Annot", Subtype:"Link", Rect:[x,y,x+w,y+h], Border:[0,0,0], F:4 };
+  if(a.url) o.A={ S:PDFName.of("URI"), URI:PDFString.of(asciiUrl(a.url)) };
+  else { const r=refs[a.k]; if(!r) return; o.Dest=[r, PDFName.of("XYZ"), PDFNull, PDFNull, PDFNull]; }
+  page.node.addAnnot(out.context.register(out.context.obj(o)));
+}
+
+/* ── text geometry (shared by find and text markup) ── */
+async function pageItems(doc, pi){
+  const pg=doc.pages[pi]; if(!pg||pg.blank) return [];
+  const src=doc.sources[pg.s];
+  if(!src.textCache[pg.p]) src.textCache[pg.p]=await src.proxies[pg.p].getTextContent();
+  const tc=src.textCache[pg.p];
+  if(!tc._fam){ tc._fam=1; tc.items.forEach(it=>{ it._fam=(tc.styles[it.fontName]||{}).fontFamily||"sans-serif"; }); }
+  return tc.items;
+}
+// Cumulative width fractions of each character in a text run, measured in a similar font,
+// so partial-run boxes line up with proportional glyphs instead of assuming equal widths.
+const _mctx=document.createElement("canvas").getContext("2d");
+function itemFracs(item){
+  if(item._fx && item._fx.length===item.str.length+1) return item._fx;
+  _mctx.font=`100px ${item._fam||"sans-serif"}`;
+  const total=_mctx.measureText(item.str).width||1, fx=[0];
+  for(let i=1;i<=item.str.length;i++) fx.push(Math.min(1,_mctx.measureText(item.str.slice(0,i)).width/total));
+  return (item._fx=fx);
+}
+function pageVP(doc,pg){ const proxy=doc.sources[pg.s].proxies[pg.p]; return proxy.getViewport({scale:1, rotation:(proxy.rotate+pg.rot)%360}); }
+// Box (display units, zoom 1, current rotation) covering characters [s,e) of a text item, plus its reading direction.
+function segRect(vp, item, s, e){
+  const [a,b,c,d,ex,fy]=item.transform;
+  const ul=Math.hypot(a,b)||1, cl=Math.hypot(c,d);
+  const ux=a/ul, uy=b/ul; let vx=cl?c/cl:-uy, vy=cl?d/cl:ux;
+  const h=cl||ul, n=Math.max(1,item.str.length), W=item.width||h*0.5*n;
+  const fx=item.str.length>1 ? itemFracs(item) : null;
+  const t0=fx?W*fx[s]:W*s/n, t1=fx?W*fx[e]:W*e/n;
+  const P=(t,q)=>vp.convertToViewportPoint(ex+ux*t+vx*q, fy+uy*t+vy*q);
+  const pts=[P(t0,-0.22*h),P(t1,-0.22*h),P(t0,0.9*h),P(t1,0.9*h)];
+  const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]), x=Math.min(...xs), y=Math.min(...ys);
+  const b0=P(t0,0), b1=P(t1===t0?t0+1:t1,0);
+  const rot=((Math.round(Math.atan2(b1[1]-b0[1], b1[0]-b0[0])*2/Math.PI)*90)%360+360)%360;
+  return { x, y, w:Math.max(...xs)-x, h:Math.max(...ys)-y, rot, base:b0, size:h };
+}
+async function pageChars(doc, pi){
+  const pg=doc.pages[pi], items=await pageItems(doc,pi); if(!items.length) return [];
+  const vp=pageVP(doc,pg), rep=new Set(pg.rep||[]), out=[];
+  items.forEach((it,ii)=>{ if(rep.has(ii)||!it.str) return;
+    for(let c=0;c<it.str.length;c++) out.push({ii, c, ch:it.str[c], ...segRect(vp,it,c,c+1)});
+    if(it.hasEOL && out.length) out[out.length-1].eol=true;
+  });
+  return out;
+}
+
+/* ── text markup: highlight / underline / strikeout / squiggly ── */
+function setQuads(a, abs){
+  const x=Math.min(...abs.map(q=>q[0])), y=Math.min(...abs.map(q=>q[1]));
+  const X=Math.max(...abs.map(q=>q[0]+q[2])), Y=Math.max(...abs.map(q=>q[1]+q[3]));
+  a.x=x; a.y=y; a.w=Math.max(1,X-x); a.h=Math.max(1,Y-y); a.quads=abs.map(([qx,qy,qw,qh])=>[qx-x,qy-y,qw,qh]);
+}
+async function createMarkup(doc, idx, t, x0, y0, x1, y1, isClick){
+  const pg=doc.pages[idx], chars=await pageChars(doc, idx);
+  const near=(x,y)=>{ let best=-1, bd=Infinity;
+    chars.forEach((c,i)=>{ const dx=x<c.x?c.x-x:x>c.x+c.w?x-(c.x+c.w):0, dy=y<c.y?c.y-y:y>c.y+c.h?y-(c.y+c.h):0;
+      const dd=dy*6+dx; if(dd<bd){ bd=dd; best=i; } });
+    return {i:best, d:bd}; };
+  let rects=[], quote="", rot=0;
+  if(chars.length){
+    let a=near(x0,y0), b=isClick?a:near(x1,y1);
+    const ws=ch=>/\s/.test(ch);
+    if(isClick && a.i>=0 && a.d<2 && !ws(chars[a.i].ch)){   // click selects the word
+      let s=a.i, e=a.i;
+      const same=(p,q)=>!ws(chars[p].ch) && Math.abs(chars[p].y-chars[q].y)<chars[q].h*0.5;
+      while(s>0 && !chars[s-1].eol && same(s-1,s)) s--;
+      while(e<chars.length-1 && !chars[e].eol && same(e+1,e)) e++;
+      a={i:s,d:0}; b={i:e,d:0};
+    } else if(isClick){ a={i:-1}; }
+    if(a.i>=0 && b.i>=0 && Math.min(a.d,b.d)<80){
+      let lo=Math.min(a.i,b.i), hi=Math.max(a.i,b.i);
+      while(lo<hi && ws(chars[lo].ch)) lo++;
+      while(hi>lo && ws(chars[hi].ch)) hi--;
+      const sel=chars.slice(lo,hi+1);
+      const rc={}; sel.forEach(c=>rc[c.rot]=(rc[c.rot]||0)+1);
+      rot=+Object.keys(rc).sort((p,q)=>rc[q]-rc[p])[0]||0;
+      sel.forEach((c,i)=>{
+        quote+=c.ch+(c.eol&&i<sel.length-1?" ":"");
+        const last=rects[rects.length-1];
+        const sameLine=last && last.rot===c.rot && (c.rot%180===0 ? Math.abs(last.y-c.y)<c.h*0.35 : Math.abs(last.x-c.x)<c.w*0.35);
+        if(sameLine){ const X=Math.max(last.x+last.w,c.x+c.w), Y=Math.max(last.y+last.h,c.y+c.h);
+          last.x=Math.min(last.x,c.x); last.y=Math.min(last.y,c.y); last.w=X-last.x; last.h=Y-last.y; }
+        else rects.push({x:c.x,y:c.y,w:c.w,h:c.h,rot:c.rot});
+      });
+    }
+  }
+  if(!rects.length){
+    if(isClick){ toast("No text under the pointer — drag across the text, or drag a box on scanned pages."); return; }
+    const bx=Math.min(x0,x1), by=Math.min(y0,y1), bw=Math.abs(x1-x0), bh=Math.abs(y1-y0);
+    if(bw<3||bh<3) return;
+    rects=[{x:bx,y:by,w:bw,h:bh}];   // no text layer (scanned page): mark the box
+  }
+  const a={ id:++aid, t, color:MARK_COLOR[t], author:author(), date:new Date().toISOString(), cm:"", replies:[],
+    quote:quote.trim().slice(0,500)||undefined, rot };
+  setQuads(a, rects.map(r=>[r.x,r.y,r.w,r.h]));
+  pg.annots.push(a); refreshOverlay(doc, idx);
+}
+function quadPts(q, rot){ const [x,y,w,h]=q;   // → [UL, UR, LL, LR] in reading orientation
+  switch(rot){
+    case 90:  return [[x+w,y],[x+w,y+h],[x,y],[x,y+h]];
+    case 180: return [[x+w,y+h],[x,y+h],[x+w,y],[x,y]];
+    case 270: return [[x,y+h],[x,y],[x+w,y+h],[x+w,y]];
+    default:  return [[x,y],[x+w,y],[x,y+h],[x+w,y+h]];
+  } }
+const lerp=(p,q,t)=>[p[0]+(q[0]-p[0])*t, p[1]+(q[1]-p[1])*t];
+function absQuads(a){ return a.quads ? a.quads.map(([qx,qy,qw,qh])=>[a.x+qx,a.y+qy,qw,qh]) : [[a.x,a.y,a.w,a.h]]; }
+function markupGeom(a){   // absolute page geometry for drawing
+  const rot=a.rot||0, g={fills:[],lines:[],zigs:[],quads:[]};
+  absQuads(a).forEach(q=>{
+    const [UL,UR,LL,LR]=quadPts(q,rot), th=(rot%180)?q[2]:q[3], lw=Math.max(0.6, th*0.07);
+    g.quads.push([UL,UR,LL,LR]);
+    if(a.t==="hl") g.fills.push([UL,UR,LR,LL]);
+    else if(a.t==="strike") g.lines.push([lerp(UL,LL,.55), lerp(UR,LR,.55), lw]);
+    else if(a.t==="under")  g.lines.push([lerp(UL,LL,.9),  lerp(UR,LR,.9),  lw]);
+    else if(a.t==="squig"){
+      const A=lerp(UL,LL,.86), B=lerp(UR,LR,.86), len=Math.hypot(B[0]-A[0],B[1]-A[1])||1;
+      const amp=th*0.065, n=Math.max(2,Math.round(len/Math.max(1.2,th*0.14)));
+      const dx=(B[0]-A[0])/n, dy=(B[1]-A[1])/n, nl=Math.hypot(dx,dy)||1, nx=-dy/nl, ny=dx/nl, pts=[];
+      for(let i=0;i<=n;i++){ const s=(i%2?1:-1)*amp; pts.push([A[0]+dx*i+nx*s, A[1]+dy*i+ny*s]); }
+      g.zigs.push([pts, lw]);
+    }
+  });
+  return g;
+}
+function markupSVG(a){
+  const g=markupGeom(a), c=esc(a.color||MARK_COLOR[a.t]), P=p=>`${(p[0]-a.x).toFixed(2)},${(p[1]-a.y).toFixed(2)}`;
+  let s=`<svg viewBox="0 0 ${a.w} ${a.h}" preserveAspectRatio="none">`;
+  g.fills.forEach(f=>s+=`<polygon points="${f.map(P).join(" ")}" fill="${c}" fill-opacity=".42"/>`);
+  g.lines.forEach(([p,q,lw])=>{ const [x1,y1]=P(p).split(","), [x2,y2]=P(q).split(",");
+    s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${lw}"/>`; });
+  g.zigs.forEach(([pts,lw])=>s+=`<polyline points="${pts.map(P).join(" ")}" fill="none" stroke="${c}" stroke-width="${lw}" stroke-linejoin="round"/>`);
+  return s+"</svg>";
+}
+const NOTE_SHAPE=[[1,1],[21,1],[21,17],[13,17],[8.5,21],[8.5,17],[1,17]];
+const NOTE_LINES=[[[5,6],[17,6]],[[5,9.5],[17,9.5]],[[5,13],[13,13]]];
+function noteIconSVG(color){
+  return `<svg viewBox="0 0 22 22"><path d="M${NOTE_SHAPE.map(p=>p.join(" ")).join("L")}Z" fill="${esc(color)}" stroke="#6b5600" stroke-width="1" stroke-linejoin="round"/>`+
+    NOTE_LINES.map(([p,q])=>`<path d="M${p.join(" ")}L${q.join(" ")}" stroke="#6b5600" stroke-width="1.3"/>`).join("")+`</svg>`;
+}
+
+/* ── polygon & cloud ── */
+function polyOutline(a){ return a.cloud ? cloudPts(a.pts, a.sw) : a.pts; }
+function cloudPts(pts, sw){
+  const n=pts.length; if(n<3) return pts;
+  const cx=pts.reduce((s,p)=>s+p[0],0)/n, cy=pts.reduce((s,p)=>s+p[1],0)/n;
+  const bump=Math.max(9, (sw||2)*5), out=[];
+  for(let i=0;i<n;i++){
+    const A=pts[i], B=pts[(i+1)%n], L=Math.hypot(B[0]-A[0],B[1]-A[1]); if(L<0.5) continue;
+    const k=Math.max(1,Math.round(L/bump)), dx=(B[0]-A[0])/k, dy=(B[1]-A[1])/k;
+    let nx=-dy, ny=dx; const mx=(A[0]+B[0])/2-cx, my=(A[1]+B[1])/2-cy;
+    if(nx*mx+ny*my<0){ nx=-nx; ny=-ny; }                      // bulge away from the centre
+    for(let j=0;j<k;j++){
+      const sx=A[0]+dx*j, sy=A[1]+dy*j, ccx=sx+dx/2, ccy=sy+dy/2, r=Math.hypot(dx,dy)/2;
+      const a0=Math.atan2(sy-ccy, sx-ccx);
+      const pick=Math.cos(a0+Math.PI/2)*nx+Math.sin(a0+Math.PI/2)*ny > 0 ? 1 : -1;
+      for(let s=0;s<=8;s++){ const t=a0+pick*Math.PI*s/8; out.push([ccx+r*Math.cos(t), ccy+r*Math.sin(t)]); }
+    }
+  }
+  return out.length?out:pts;
+}
+function polyClick(doc, idx, ov, x, y){
+  if(S.polyDraft && (S.polyDraft.docId!==doc.id || S.polyDraft.idx!==idx)) cancelPoly();
+  if(!S.polyDraft){
+    const svgNS="http://www.w3.org/2000/svg", [W,H]=dispDims(doc,doc.pages[idx]);
+    const svg=document.createElementNS(svgNS,"svg");
+    svg.setAttribute("viewBox",`0 0 ${W} ${H}`); svg.setAttribute("preserveAspectRatio","none");
+    svg.style.cssText="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible";
+    const f=fontState(), line=document.createElementNS(svgNS,"polyline");
+    line.setAttribute("fill","none"); line.setAttribute("stroke",f.color); line.setAttribute("stroke-width",f.sw);
+    line.setAttribute("stroke-dasharray","5 3"); svg.appendChild(line); ov.appendChild(svg);
+    const D=S.polyDraft={ docId:doc.id, idx, ov, svg, line, f, tool:S.tool, pts:[[x,y]], cursor:null, zoom:doc.zoom };
+    D.mm=e=>{ const r=ov.getBoundingClientRect(); D.cursor=[(e.clientX-r.left)/D.zoom,(e.clientY-r.top)/D.zoom]; drawPolyPreview(); };
+    D.dbl=e=>{ e.preventDefault(); finishPoly(); };
+    ov.addEventListener("mousemove",D.mm); ov.addEventListener("dblclick",D.dbl);
+    drawPolyPreview(); return;
+  }
+  const D=S.polyDraft, P=D.pts, z=D.zoom;
+  if(P.length>=3 && Math.hypot(x-P[0][0],y-P[0][1])*z<9){ finishPoly(); return; }
+  const last=P[P.length-1]; if(Math.hypot(x-last[0],y-last[1])*z<3) return;   // 2nd press of a double-click
+  P.push([x,y]); drawPolyPreview();
+}
+function drawPolyPreview(){
+  const D=S.polyDraft; if(!D) return;
+  const pts=D.cursor?[...D.pts,D.cursor]:D.pts;
+  D.line.setAttribute("points", pts.map(p=>p.join(",")).join(" "));
+}
+function cancelPoly(){
+  const D=S.polyDraft; if(!D) return; S.polyDraft=null;
+  D.ov.removeEventListener("mousemove",D.mm); D.ov.removeEventListener("dblclick",D.dbl); D.svg.remove();
+}
+function finishPoly(){
+  const D=S.polyDraft; if(!D) return;
+  const pts=D.pts.filter((p,i,arr)=>i===0||Math.hypot(p[0]-arr[i-1][0],p[1]-arr[i-1][1])*D.zoom>=3);
+  cancelPoly();
+  const doc=S.docs.find(d=>d.id===D.docId); if(!doc) return;
+  if(pts.length<3){ toast("A shape needs at least 3 points."); return; }
+  doc.pages[D.idx].annots.push({ id:++aid, t:"poly", pts, stroke:D.f.color, sw:D.f.sw, cloud:D.tool==="cloud"||undefined });
+  refreshOverlay(doc, D.idx);
+}
+
+/* ── find & replace ── */
+let findSeq=0, findT=null;
+function openFind(){
+  if(!activeDoc()) return;
+  const fb=$("#findbar"); fb.classList.add("show");
+  const q=$("#fq"); q.focus(); q.select(); if(q.value) runFind();
+}
+function closeFind(){
+  const fb=$("#findbar"); if(!fb.classList.contains("show")) return;
+  fb.classList.remove("show"); S.find=null; repaintHits(activeDoc());
+}
+async function runFind(keepCur){
+  const d=activeDoc(), q=$("#fq").value, seq=++findSeq;
+  const prevCur = keepCur && S.find ? S.find.cur : -1;
+  if(!d || !q){ S.find=null; updFindCount(); repaintHits(d); return; }
+  const cs=$("#fcs").classList.contains("on"), ww=$("#fww").classList.contains("on");
+  const body=q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  const re=new RegExp((ww?"(?<![\\p{L}\\p{N}_])":"")+body+(ww?"(?![\\p{L}\\p{N}_])":""), "gu"+(cs?"":"i"));
+  const hits=[];
+  for(let pi=0;pi<d.pages.length;pi++){
+    const pg=d.pages[pi], items=await pageItems(d,pi);
+    if(seq!==findSeq) return;
+    const rep=new Set(pg.rep||[]); let str=""; const map=[];
+    items.forEach((it,ii)=>{
+      if(!rep.has(ii) && it.str) for(let c=0;c<it.str.length;c++){ str+=it.str[c]; map.push([ii,c]); }
+      if(it.hasEOL){ str+=" "; map.push(null); }
+    });
+    let m; re.lastIndex=0;
+    while((m=re.exec(str))){
+      if(!m[0].length){ re.lastIndex++; continue; }
+      const segs=[];
+      for(let j=m.index;j<m.index+m[0].length;j++){ const e=map[j]; if(!e) continue;
+        const last=segs[segs.length-1];
+        if(last && last.ii===e[0] && last.e===e[1]) last.e++; else segs.push({ii:e[0], s:e[1], e:e[1]+1}); }
+      if(segs.length) hits.push({pi, segs});
+    }
+    pg.annots.forEach(a=>{ if(a.t!=="text"||!a.text) return; re.lastIndex=0; let mm;
+      while((mm=re.exec(a.text))){ if(!mm[0].length){ re.lastIndex++; continue; } hits.push({pi, aid:a.id, s:mm.index, e:mm.index+mm[0].length}); } });
+  }
+  S.find={ docId:d.id, q, hits, cur:-1 };
+  if(hits.length){
+    if(keepCur) S.find.cur=Math.min(Math.max(prevCur,0), hits.length-1);
+    else { const i=hits.findIndex(h=>h.pi>=d.sel); S.find.cur=i>=0?i:0; }
+  }
+  updFindCount(); repaintHits(d); if(hits.length && !keepCur) scrollToHit();
+}
+function updFindCount(){
+  const F=S.find, el=$("#fcount");
+  el.textContent = !F ? "0 / 0" : F.hits.length ? `${F.cur+1} / ${F.hits.length}` : "No results";
+  el.style.color = F && !F.hits.length ? "var(--danger)" : "";
+}
+function hitRects(doc, h, vpCache){
+  const pg=doc.pages[h.pi]; if(!pg) return [];
+  if(h.aid){ const a=pg.annots.find(x=>x.id===h.aid); if(!a) return [];
+    const before=a.text.slice(0,h.s), line=before.split("\n").length-1, ls=before.lastIndexOf("\n")+1;
+    _mctx.font=`${a.ital?"italic ":""}${a.bold?"700 ":""}100px ${cssFontFamily(a.fam)}`;
+    const mw=t=>_mctx.measureText(t).width*a.size/100, lh=a.size*(a.lh||1.15);
+    const x0=mw(a.text.slice(ls,h.s)), w=mw(a.text.slice(h.s,h.e));
+    return [[a.x+x0, a.y+line*lh, Math.max(2,w), a.size*1.15]]; }
+  const items=pg.blank?null:doc.sources[pg.s].textCache[pg.p]?.items; if(!items) return [];
+  const vp=vpCache||pageVP(doc,pg);
+  return h.segs.map(s=>{ const r=segRect(vp, items[s.ii], s.s, s.e); return [r.x,r.y,r.w,r.h]; });
+}
+function renderFindHits(doc, idx, ov){
+  ov.querySelectorAll(".findhit").forEach(n=>n.remove());
+  const F=S.find; if(!F || F.docId!==doc.id || !F.hits.length) return;
+  const pg=doc.pages[idx]; if(!pg) return;
+  const z=doc.zoom, vp=pg.blank?null:pageVP(doc,pg);
+  F.hits.forEach((h,hi)=>{ if(h.pi!==idx) return;
+    hitRects(doc,h,vp).forEach(([x,y,w,hh])=>{
+      const el=document.createElement("div"); el.className="findhit"+(hi===F.cur?" cur":"");
+      el.style.left=x*z+"px"; el.style.top=y*z+"px"; el.style.width=w*z+"px"; el.style.height=hh*z+"px";
+      ov.appendChild(el); }); });
+}
+function repaintHits(d){ if(!d) return; d.pages.forEach((_,i)=>{ const ov=overlayFor(i); if(ov) renderFindHits(d,i,ov); }); }
+function scrollToHit(){
+  const d=activeDoc(), F=S.find; if(!d||!F||F.cur<0) return;
+  const h=F.hits[F.cur]; selectPage(d,h.pi,false);
+  const v=$("#viewer"), box=v&&v.children[h.pi]; if(!box) return;
+  const r=hitRects(d,h)[0]||[0,0,0,0];
+  v.scrollTo({ top:box.offsetTop+r[1]*d.zoom-v.clientHeight/3, left:Math.max(0,box.offsetLeft+r[0]*d.zoom-v.clientWidth/2), behavior:"smooth" });
+}
+function findGo(dir){
+  const F=S.find;
+  if(!F || F.q!==$("#fq").value){ runFind(); return; }
+  if(!F.hits.length) return;
+  F.cur=(F.cur+dir+F.hits.length)%F.hits.length;
+  updFindCount(); repaintHits(activeDoc()); scrollToHit();
+}
+async function replaceHits(doc, list, repl){
+  let done=0, skipped=0; const touched=new Set(), byPage=new Map();
+  list.forEach(h=>{ if(!byPage.has(h.pi)) byPage.set(h.pi,[]); byPage.get(h.pi).push(h); });
+  for(const [pi,hs] of byPage){
+    const pg=doc.pages[pi];
+    // 1) typed text boxes: edit in place (back to front so offsets stay valid)
+    hs.filter(h=>h.aid).sort((a,b)=>b.s-a.s).forEach(h=>{ const a=pg.annots.find(x=>x.id===h.aid); if(!a) return;
+      a.text=a.text.slice(0,h.s)+repl+a.text.slice(h.e); done++; touched.add(pi); });
+    // 2) original PDF text: cover the text run and retype it (same approach as Edit Text)
+    const th=hs.filter(h=>h.segs); if(!th.length) continue;
+    const items=await pageItems(doc,pi), vp=pageVP(doc,pg), rep=new Set(pg.rep||[]);
+    const ranges=th.map(h=>({lo:Math.min(...h.segs.map(s=>s.ii)), hi:Math.max(...h.segs.map(s=>s.ii)), hits:[h]})).sort((a,b)=>a.lo-b.lo);
+    const cl=[]; ranges.forEach(r=>{ const L=cl[cl.length-1]; if(L && r.lo<=L.hi){ L.hi=Math.max(L.hi,r.hi); L.hits.push(...r.hits); } else cl.push(r); });
+    for(const c of cl){
+      const first=segRect(vp, items[c.lo], 0, items[c.lo].str.length);
+      if(first.rot!==0){ skipped+=c.hits.length; continue; }   // rotated/vertical text: not supported
+      let T=""; const off={};
+      for(let ii=c.lo; ii<=c.hi; ii++){ if(rep.has(ii)) continue;
+        if(T && items[ii-1] && items[ii-1].hasEOL) T+=" "; off[ii]=T.length; T+=items[ii].str; }
+      c.hits.map(h=>{ const a=h.segs[0], b=h.segs[h.segs.length-1]; return [off[a.ii]+a.s, off[b.ii]+b.e]; })
+        .sort((a,b)=>b[0]-a[0]).forEach(([s,e])=>{ T=T.slice(0,s)+repl+T.slice(e); });
+      for(let ii=c.lo; ii<=c.hi; ii++){ if(rep.has(ii)||!items[ii].str) continue;
+        const r=segRect(vp, items[ii], 0, items[ii].str.length);
+        pg.annots.push({ id:++aid, t:"whiteout", x:r.x-0.6, y:r.y-0.6, w:r.w+1.2, h:r.h+1.2 });
+        (pg.rep=pg.rep||[]).push(ii); }
+      const style=doc.sources[pg.s].textCache[pg.p].styles[items[c.lo].fontName]||{};
+      const size=Math.max(4, Math.round(first.size*10)/10);
+      if(T) pg.annots.push({ id:++aid, t:"text", x:first.base[0], y:first.base[1]-size*0.82, text:T, size,
+        fam:famGuess(style.fontFamily), color:"#000000", bold:false, ital:false, lh:1.15, box:false });
+      done+=c.hits.length; touched.add(pi);
+    }
+  }
+  touched.forEach(pi=>refreshOverlay(doc,pi));
+  return {done, skipped};
+}
+async function doReplace(all){
+  const d=activeDoc(), F=S.find, repl=$("#fr").value;
+  if(!d||!F||F.q!==$("#fq").value){ await runFind(); return; }
+  if(!F.hits.length){ toast("Nothing to replace."); return; }
+  const list = all ? F.hits.slice() : [F.hits[F.cur]];
+  const {done, skipped}=await replaceHits(d, list, repl);
+  await runFind(true);
+  toast((all?`Replaced ${done} match${done===1?"":"es"}.`:"Replaced.")+(skipped?` ${skipped} on rotated text were skipped.`:"")+" Ctrl+Z to undo.");
+}
+$("#fq").addEventListener("input", ()=>{ clearTimeout(findT); findT=setTimeout(()=>runFind(),220); });
+$("#fq").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); clearTimeout(findT); findGo(e.shiftKey?-1:1); } });
+$("#fr").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); doReplace(false); } });
+$("#fprev").onclick=()=>findGo(-1); $("#fnext").onclick=()=>findGo(1);
+["fcs","fww"].forEach(id=>$("#"+id).onclick=e=>{ e.currentTarget.classList.toggle("on"); runFind(); });
+$("#frtog").onclick=()=>{ const fb=$("#findbar"); fb.classList.toggle("rep"); if(fb.classList.contains("rep")) $("#fr").focus(); };
+$("#fclose").onclick=closeFind; $("#frone").onclick=()=>doReplace(false); $("#frall").onclick=()=>doReplace(true);
+
+/* ── comments panel ── */
+const TYPE_NAME={ note:"Note", hl:"Highlight", under:"Underline", strike:"Strikeout", squig:"Squiggly", stamp:"Stamp" };
+const ORIG_TYPES=new Set(["Text","FreeText","Highlight","Underline","StrikeOut","Squiggly","Stamp","Square","Circle","Ink","Line","Polygon","PolyLine","Caret","FileAttachment"]);
+async function pageAnnots(src, p){
+  src.annCache=src.annCache||{};
+  if(!src.annCache[p]){ try{ src.annCache[p]=await src.proxies[p].getAnnotations({intent:"display"}); }catch(_){ src.annCache[p]=[]; } }
+  return src.annCache[p];
+}
+function focusComment(doc, pi, aid, focusText, open){
+  S.cmSel=aid;
+  if(open && S.panel!=="comments") showPanel("comments");
+  else if(S.panel==="comments") renderComments(doc);
+  else return;
+  setTimeout(()=>{ const card=$(`#sidebody .cm[data-aid="${aid}"]`); if(!card) return;
+    $$("#sidebody .cm").forEach(c=>c.classList.toggle("sel",c===card));
+    card.scrollIntoView({block:"nearest"});
+    if(focusText){ const ta=card.querySelector("textarea"); if(ta) ta.focus(); } }, 60);
+}
+async function renderComments(doc){
+  const body=$("#sidebody"), tok=(renderComments.tok=(renderComments.tok||0)+1);
+  const items=[]; doc.pages.forEach((pg,pi)=>pg.annots.forEach(a=>{ if(COMMENTABLE.has(a.t)) items.push({pi,a}); }));
+  let html=`<div class="phead"><b>Comments (${items.length})</b><button class="pbtn" data-cx="note" title="Add a sticky note">＋ Note</button></div>
+    <div class="cmset">Your name <input type="text" id="cmAuthor" value="${esc(author())}" aria-label="Your name for comments"></div>
+    <label class="cmset" style="cursor:pointer"><input type="checkbox" id="cmFlat" ${S.flatten?"checked":""}> Flatten comments into the pages on save</label>`;
+  if(!items.length) html+=`<div class="pempty">No comments yet. Use <b>Highlight</b>, <b>Underline</b>, <b>Strikeout</b>, <b>Squiggly</b>, <b>Note</b> or <b>Stamp</b> on the Comment tab — they'll show up here to reply to and review.</div>`;
+  items.forEach(({pi,a})=>{
+    const name=TYPE_NAME[a.t]+(a.t==="stamp"&&a.label?": "+a.label:"");
+    html+=`<div class="cm${S.cmSel===a.id?" sel":""}" data-pi="${pi}" data-aid="${a.id}">
+      <div class="cmh" data-c="go"><span class="cmic" style="background:${esc(a.color||MARK_COLOR[a.t]||"#ffd43b")}"></span><span class="cmt">${esc(name)}</span><span class="cmp">· p.${pi+1}</span><button class="x" data-c="del" title="Delete">✕</button></div>
+      <div class="cmmeta">${esc(a.author||"")} · ${esc(fmtDate(a.date))}</div>
+      ${a.quote?`<div class="cmq">“${esc(a.quote)}”</div>`:""}
+      <textarea data-c="txt" placeholder="${a.t==="note"?"Type your note…":"Add a comment…"}" aria-label="Comment text">${esc(a.cm||"")}</textarea>
+      ${(a.replies||[]).map((r,ri)=>`<div class="rep"><button class="rx" data-c="rdel" data-ri="${ri}" title="Delete reply">✕</button><div class="ra">${esc(r.author||"")} · ${esc(fmtDate(r.date))}</div>${esc(r.text||"")}</div>`).join("")}
+      <div class="repadd"><input data-c="rin" placeholder="Reply…" aria-label="Reply"><button class="pbtn" data-c="rep">Reply</button></div>
+    </div>`;
+  });
+  body.innerHTML=html+`<div id="cmOrig"></div>`;
+  body.querySelector('[data-cx="note"]').onclick=()=>setTool("note");
+  $("#cmAuthor").onchange=e=>{ lsSet("tt_author", e.target.value.trim()||"Guest"); };
+  $("#cmFlat").onchange=e=>setFlatten(e.target.checked);
+  body.querySelectorAll(".cm").forEach(card=>{
+    const pi=+card.dataset.pi, id=+card.dataset.aid, get=()=>doc.pages[pi]&&doc.pages[pi].annots.find(x=>x.id===id);
+    card.querySelector('[data-c="go"]').onclick=e=>{
+      if(e.target.dataset.c==="del"){ const pg=doc.pages[pi]; pg.annots=pg.annots.filter(x=>x.id!==id);
+        if(S.sel&&S.sel.ids) S.sel.ids.delete(id); refreshOverlay(doc,pi); renderComments(doc); return; }
+      S.cmSel=id; $$("#sidebody .cm").forEach(c=>c.classList.toggle("sel",c===card));
+      selectPage(doc,pi,true); S.sel={docId:doc.id,pageIdx:pi,ids:new Set([id])}; refreshOverlay(doc,pi);
+    };
+    const ta=card.querySelector('[data-c="txt"]');
+    ta.oninput=()=>{ const a=get(); if(!a) return; a.cm=ta.value; a.edited=new Date().toISOString(); markDirty(); };
+    ta.onblur=()=>{ const ov=overlayFor(pi); if(ov) renderAnnots(doc,pi,ov); };
+    const inp=card.querySelector('[data-c="rin"]');
+    const add=()=>{ const v=inp.value.trim(), a=get(); if(!v||!a) return;
+      (a.replies=a.replies||[]).push({ author:author(), text:v, date:new Date().toISOString() });
+      S.cmSel=id; markDirty(); renderComments(doc); };
+    card.querySelector('[data-c="rep"]').onclick=add;
+    inp.onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); add(); } };
+    card.querySelectorAll('[data-c="rdel"]').forEach(b=>b.onclick=()=>{ const a=get(); if(!a) return;
+      a.replies.splice(+b.dataset.ri,1); markDirty(); renderComments(doc); });
+  });
+  // Read-only list of comments that were already in the opened file
+  const orig=[];
+  for(let pi=0;pi<doc.pages.length;pi++){ const pg=doc.pages[pi]; if(pg.blank) continue;
+    const anns=await pageAnnots(doc.sources[pg.s], pg.p); if(tok!==renderComments.tok) return;
+    anns.forEach(an=>{ if(ORIG_TYPES.has(an.subtype) && !an.inReplyTo)
+      orig.push({ pi, type:an.subtype, txt:(an.contentsObj&&an.contentsObj.str)||an.contents||"", by:(an.titleObj&&an.titleObj.str)||an.title||"" }); });
+  }
+  const el=$("#cmOrig"); if(!el || !orig.length) return;
+  el.innerHTML=`<div class="cmsec">Already in the file (${orig.length})</div>`+orig.map(o=>
+    `<div class="cm cmorig" data-opi="${o.pi}"><div class="cmh"><span class="cmt">${esc(o.type)}</span><span class="cmp">· p.${o.pi+1}</span></div>`+
+    (o.by?`<div class="cmmeta">${esc(o.by)}</div>`:"")+(o.txt?`<div>${esc(o.txt)}</div>`:"")+`</div>`).join("");
+  el.querySelectorAll("[data-opi]").forEach(c=>c.onclick=()=>selectPage(doc,+c.dataset.opi,true));
+}
+function setFlatten(v){
+  S.flatten=!!v; lsSet("tt_flatten", S.flatten?"1":"0");
+  const b=$("#btnFlatten"); if(b){ b.classList.toggle("on",S.flatten); b.querySelector("span").textContent="Flatten: "+(S.flatten?"On":"Off"); }
+  const c=$("#cmFlat"); if(c) c.checked=S.flatten;
+}
+
+/* ── stamps ── */
+const STAMPS=[["APPROVED","#2b8a3e"],["NOT APPROVED","#c92a2a"],["DRAFT","#1971c2"],["FINAL","#2b8a3e"],
+  ["CONFIDENTIAL","#c92a2a"],["COMPLETED","#2b8a3e"],["REVIEWED","#1971c2"],["RECEIVED","#1971c2"],
+  ["FOR COMMENT","#5f3dc4"],["VOID","#c92a2a"],["SIGN HERE","#e8590c"],["PAID","#2b8a3e"]];
+function makeStamp(label, color, sub){
+  const K=4, fs=17, pad=11, cv=document.createElement("canvas"), c=cv.getContext("2d");
+  // sizes are in PDF points; the canvas is drawn at K× for crispness (scale applied below)
+  const fontMain=`bold ${fs}px Helvetica, Arial, sans-serif`, fontSub=`8.5px Helvetica, Arial, sans-serif`;
+  c.font=fontMain; const tw=c.measureText(label).width;
+  let sw=0; if(sub){ c.font=fontSub; sw=c.measureText(sub).width; }
+  const w=Math.ceil(Math.max(tw,sw)+pad*2), h=sub?47:34;
+  cv.width=w*K; cv.height=h*K; c.scale(K,K);
+  const rr=(x,y,ww,hh,r)=>{ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+ww,y,x+ww,y+hh,r); c.arcTo(x+ww,y+hh,x,y+hh,r); c.arcTo(x,y+hh,x,y,r); c.arcTo(x,y,x+ww,y,r); c.closePath(); };
+  rr(1.5,1.5,w-3,h-3,6); c.globalAlpha=.08; c.fillStyle=color; c.fill(); c.globalAlpha=1;
+  c.lineWidth=2.4; c.strokeStyle=color; c.stroke();
+  rr(4.5,4.5,w-9,h-9,4); c.lineWidth=.8; c.stroke();
+  c.fillStyle=color; c.textAlign="center"; c.textBaseline="alphabetic";
+  c.font=fontMain; c.fillText(label, w/2, sub?23:23.5);
+  if(sub){ c.font=fontSub; c.fillText(sub, w/2, h-10); }
+  return { url:cv.toDataURL("image/png"), w, h };
+}
+function stampDialog(){
+  if(!activeDoc()) return;
+  modal(`<h2>Stamp</h2>
+    <label class="cmset" style="margin:0 0 10px;cursor:pointer;color:var(--ink)"><input type="checkbox" id="stDyn" style="width:auto"> Add my name, date &amp; time (dynamic stamp)</label>
+    <div class="stampgrid" id="stGrid"></div>
+    <div style="margin-top:12px"><button class="pbtn" id="stCustom" style="padding:6px 12px">Use my own image…</button></div>`, ()=>{});
+  $("#mOk").style.display="none"; $("#mCancel").textContent="Close";
+  const grid=$("#stGrid");
+  const draw=()=>{ const dyn=$("#stDyn").checked, sub=dyn?`${author()} · ${new Date().toLocaleString([], {dateStyle:"medium",timeStyle:"short"})}`:null;
+    grid.innerHTML=""; STAMPS.forEach(([lbl,col])=>{ const st=makeStamp(lbl,col,sub);
+      const b=document.createElement("button"); b.title=lbl; b.innerHTML=`<img src="${st.url}" alt="${esc(lbl)}">`;
+      b.onclick=()=>{ S.pendingStamp={...st, label:lbl}; $("#modalbg").classList.remove("show"); $("#mOk").style.display="";
+        setTool("stamp"); toast(`Click on the page to place “${lbl}”. Hold Shift to place several.`); };
+      grid.appendChild(b); }); };
+  $("#stDyn").onchange=draw; draw();
+  $("#stCustom").onclick=()=>$("#stampPick").click();
+  $("#mCancel").addEventListener("click",()=>{ $("#mOk").style.display=""; },{once:true});
+}
+function imageToPng(url, maxW){
+  return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>{
+    const cv=document.createElement("canvas"); cv.width=im.naturalWidth; cv.height=im.naturalHeight;
+    cv.getContext("2d").drawImage(im,0,0);
+    const w=Math.min(maxW, im.naturalWidth*0.75), h=w*im.naturalHeight/im.naturalWidth;
+    res({ url:cv.toDataURL("image/png"), w, h, cv }); }; im.onerror=rej; im.src=url; });
+}
+$("#stampPick").onchange=e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=async()=>{ try{ const p=await imageToPng(rd.result, 160);
+      S.pendingStamp={ url:p.url, w:p.w, h:p.h, label:f.name.replace(/\.\w+$/,"") };
+      $("#modalbg").classList.remove("show"); $("#mOk").style.display="";
+      setTool("stamp"); toast("Click on the page to place your stamp.");
+    }catch(_){ toast("Couldn't read that image."); } };
+  rd.readAsDataURL(f);
+};
+
+/* ── signatures & initials ── */
+function trimCanvas(cv){
+  const c=cv.getContext("2d"), {width:W,height:H}=cv, data=c.getImageData(0,0,W,H).data;
+  let x0=W,y0=H,x1=-1,y1=-1;
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(data[(y*W+x)*4+3]>12){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+  if(x1<0) return null;
+  const p=6, out=document.createElement("canvas"); out.width=x1-x0+1+p*2; out.height=y1-y0+1+p*2;
+  out.getContext("2d").drawImage(cv, x0-p, y0-p, out.width, out.height, 0, 0, out.width, out.height);
+  return out;
+}
+const sigStore=kind=>{ try{ return JSON.parse(lsGet("tt_sig_"+kind,"[]"))||[]; }catch(_){ return []; } };
+function placeSignature(url, kind){
+  S.pendingImg={ url, fmt:"png", sig:true, w:kind==="ini"?56:150 };
+  S.tool="image"; $$(".tool").forEach(b=>b.classList.remove("on"));
+  $("#stTool").textContent="Tool: Place "+(kind==="ini"?"Initials":"Signature");
+  $$(".overlay").forEach(o=>{ o.dataset.tool="image"; o.dataset.cursor="cross"; });
+  toast("Click where you want to sign.");
+}
+function sigDialog(kind){
+  if(!activeDoc()) return;
+  const what=kind==="ini"?"Initials":"Signature", saved=sigStore(kind);
+  const me=author()!=="Guest"?author():"";
+  const defName=kind==="ini"? me.split(/\s+/).filter(Boolean).map(w=>w[0].toUpperCase()).join("") : me;
+  modal(`<h2>${what}</h2>
+    ${saved.length?`<label>Your saved ${what.toLowerCase()} — click to use</label><div class="sigsaved" id="sigSaved">${saved.map((u,i)=>`<div data-si="${i}"><img src="${u}" alt="Saved ${what.toLowerCase()}"><span data-sx="${i}" title="Remove">✕</span></div>`).join("")}</div><label style="margin-top:14px">…or create a new one</label>`:""}
+    <div class="sigtabs"><button data-st="draw" class="on">Draw</button><button data-st="type">Type</button><button data-st="upload">Upload</button></div>
+    <div data-sp="draw"><canvas class="sigpad" id="sigPad" aria-label="Draw here"></canvas>
+      <div class="row" style="margin-top:6px;align-items:center"><div><select id="sigInk"><option value="#111111">Black ink</option><option value="#1c3faa">Blue ink</option></select></div>
+      <div style="flex:none"><button class="pbtn" id="sigClear" style="padding:6px 12px">Clear</button></div></div></div>
+    <div data-sp="type" style="display:none"><input type="text" id="sigName" value="${esc(defName)}" placeholder="Type your ${kind==="ini"?"initials":"name"}">
+      <div class="row" style="margin-top:6px"><div><select id="sigFont"><option value="Great Vibes">Script</option><option value="Dancing Script">Handwriting</option></select></div></div>
+      <canvas class="sigpad" id="sigTypeCv" style="margin-top:8px"></canvas></div>
+    <div data-sp="upload" style="display:none"><button class="pbtn" id="sigUp" style="padding:6px 12px">Choose image…</button>
+      <label class="cmset" style="display:inline-flex;margin:0 0 0 10px;color:var(--ink)"><input type="checkbox" id="sigKnock" checked style="width:auto"> Remove white background</label>
+      <canvas class="sigpad" id="sigUpCv" style="margin-top:8px"></canvas></div>
+    <label class="cmset" style="margin-top:12px;color:var(--ink);cursor:pointer"><input type="checkbox" id="sigKeep" checked style="width:auto"> Save for next time (kept only in this browser)</label>`,
+  m=>{
+    const tab=m.querySelector(".sigtabs .on").dataset.st;
+    const src = tab==="draw" ? m.querySelector("#sigPad") : tab==="type" ? m.querySelector("#sigTypeCv") : m.querySelector("#sigUpCv");
+    const t=trimCanvas(src); if(!t){ toast(tab==="upload"?"Choose an image first.":tab==="type"?"Type your name first.":"Draw your "+what.toLowerCase()+" first."); return false; }
+    const url=t.toDataURL("image/png");
+    if(m.querySelector("#sigKeep").checked){ const l=sigStore(kind).filter(u=>u!==url); l.unshift(url); lsSet("tt_sig_"+kind, JSON.stringify(l.slice(0,4))); }
+    placeSignature(url, kind);
+  });
+  $("#mOk").textContent="Place "+what;
+  const m=$("#modal");
+  m.querySelectorAll("[data-si]").forEach(d=>d.onclick=e=>{
+    if(e.target.dataset.sx!==undefined){ e.stopPropagation(); const l=sigStore(kind); l.splice(+e.target.dataset.sx,1); lsSet("tt_sig_"+kind, JSON.stringify(l)); d.remove(); return; }
+    $("#modalbg").classList.remove("show"); placeSignature(sigStore(kind)[+d.dataset.si], kind); });
+  const sizeCv=cv=>{ const r=cv.getBoundingClientRect(); cv.width=Math.max(300,Math.round(r.width*2)); cv.height=300; };
+  // draw pad
+  const pad=m.querySelector("#sigPad"); sizeCv(pad);
+  const pc=pad.getContext("2d"); let drawing=false, last=null;
+  const pos=e=>{ const r=pad.getBoundingClientRect(); return [(e.clientX-r.left)*pad.width/r.width, (e.clientY-r.top)*pad.height/r.height]; };
+  pad.onpointerdown=e=>{ drawing=true; last=pos(e); pad.setPointerCapture(e.pointerId);
+    pc.fillStyle=m.querySelector("#sigInk").value; pc.beginPath(); pc.arc(last[0],last[1],2.6,0,7); pc.fill(); };
+  pad.onpointermove=e=>{ if(!drawing) return; const p=pos(e);
+    pc.strokeStyle=m.querySelector("#sigInk").value; pc.lineWidth=5.2; pc.lineCap="round"; pc.lineJoin="round";
+    pc.beginPath(); pc.moveTo(last[0],last[1]); pc.lineTo(p[0],p[1]); pc.stroke(); last=p; };
+  pad.onpointerup=pad.onpointercancel=()=>{ drawing=false; };
+  m.querySelector("#sigClear").onclick=()=>pc.clearRect(0,0,pad.width,pad.height);
+  // type
+  const tcv=m.querySelector("#sigTypeCv");
+  const drawType=async()=>{ if(!tcv.width||tcv.width<=300) sizeCv(tcv);
+    const fam=m.querySelector("#sigFont").value, name=m.querySelector("#sigName").value.trim();
+    try{ await document.fonts.load(`80px "${fam}"`); }catch(_){}
+    const c=tcv.getContext("2d"); c.clearRect(0,0,tcv.width,tcv.height); if(!name) return;
+    let fs=kind==="ini"?150:120; c.font=`${fs}px "${fam}", cursive`;
+    while(c.measureText(name).width>tcv.width-40 && fs>30){ fs-=6; c.font=`${fs}px "${fam}", cursive`; }
+    c.fillStyle=m.querySelector("#sigInk").value; c.textAlign="center"; c.textBaseline="middle"; c.fillText(name, tcv.width/2, tcv.height/2); };
+  m.querySelector("#sigName").oninput=drawType; m.querySelector("#sigFont").onchange=drawType;
+  // upload
+  const ucv=m.querySelector("#sigUpCv"); let upImg=null;
+  const drawUp=()=>{ if(!upImg) return; if(ucv.width<=300) sizeCv(ucv);
+    const c=ucv.getContext("2d"); c.clearRect(0,0,ucv.width,ucv.height);
+    const s=Math.min((ucv.width-20)/upImg.width,(ucv.height-20)/upImg.height,1), w=upImg.width*s, h=upImg.height*s;
+    c.drawImage(upImg,(ucv.width-w)/2,(ucv.height-h)/2,w,h);
+    if(m.querySelector("#sigKnock").checked){ const id=c.getImageData(0,0,ucv.width,ucv.height), d=id.data;
+      for(let i=0;i<d.length;i+=4){ if(d[i]>225&&d[i+1]>225&&d[i+2]>225) d[i+3]=0; } c.putImageData(id,0,0); } };
+  m.querySelector("#sigUp").onclick=()=>$("#sigPick").click();
+  m.querySelector("#sigKnock").onchange=drawUp;
+  $("#sigPick").onchange=e=>{ const f=e.target.files[0]; e.target.value=""; if(!f) return;
+    const rd=new FileReader(); rd.onload=()=>{ const im=new Image(); im.onload=()=>{ upImg=im; drawUp(); }; im.src=rd.result; }; rd.readAsDataURL(f); };
+  m.querySelector("#sigInk").onchange=drawType;
+  m.querySelectorAll(".sigtabs button").forEach(b=>b.onclick=()=>{
+    m.querySelectorAll(".sigtabs button").forEach(x=>x.classList.toggle("on",x===b));
+    m.querySelectorAll("[data-sp]").forEach(p=>p.style.display=p.dataset.sp===b.dataset.st?"":"none");
+    if(b.dataset.st==="type"){ sizeCv(tcv); drawType(); m.querySelector("#sigName").focus(); }
+    if(b.dataset.st==="upload"){ sizeCv(ucv); drawUp(); } });
+}
+
+/* ── fill existing form fields ── */
+const isFillWidget=a=>a && a.annotationType===20 && a.fieldName && !a.pushButton && !a.hidden && ["Tx","Btn","Ch"].includes(a.fieldType);
+const fillWidgets=anns=>(anns||[]).filter(isFillWidget);
+const CH_DISPLAY={};   // field key → {exportValue: displayText}, for saving choice fields
+function renderFormLayer(doc, idx, box, widgets){
+  const ov=box.querySelector(".overlay"); if(!ov) return;
+  ov.querySelectorAll(".fld").forEach(n=>n.remove());
+  const pg=doc.pages[idx], proxy=doc.sources[pg.s].proxies[pg.p], z=doc.zoom;
+  const vp=proxy.getViewport({ scale:z, rotation:(proxy.rotate+pg.rot)%360 });
+  doc.form=doc.form||{};
+  widgets.forEach(w=>{
+    const [x1,y1,x2,y2]=vp.convertToViewportRectangle(w.rect);
+    let x=Math.min(x1,x2), y=Math.min(y1,y2), W=Math.abs(x2-x1), H=Math.abs(y2-y1);
+    const key=pg.s+"|"+w.fieldName, has=Object.prototype.hasOwnProperty.call(doc.form,key), v=has?doc.form[key]:w.fieldValue;
+    const set=val=>{ doc.form[key]=val; markDirty();
+      ov.querySelectorAll(".fld").forEach(o=>{ if(o!==el && o.dataset.fk===key && o.type!=="radio"){ if(o.type==="checkbox") o.checked=val!=="Off"; else o.value=val; } }); };
+    let el;
+    if(w.fieldType==="Tx"){
+      el=document.createElement(w.multiLine?"textarea":"input"); if(!w.multiLine) el.type="text";
+      el.value=v==null?"":String(v); if(w.maxLen) el.maxLength=w.maxLen;
+      const fs=(w.defaultAppearanceData&&w.defaultAppearanceData.fontSize)||0;
+      el.style.fontSize=(fs?fs*z:Math.max(8,Math.min(H*0.68, 12*z)))+"px";
+      if(w.textAlignment===1) el.style.textAlign="center"; else if(w.textAlignment===2) el.style.textAlign="right";
+      el.oninput=()=>set(el.value);
+    } else if(w.fieldType==="Btn" && (w.checkBox||w.radioButton)){
+      el=document.createElement("input"); el.type=w.checkBox?"checkbox":"radio";
+      if(w.checkBox){ el.checked=!!v && v!=="Off"; el.onchange=()=>set(el.checked?(w.exportValue||"Yes"):"Off"); }
+      else { el.name="rg_"+doc.id+"_"+key; el.checked=v===w.buttonValue; el.onchange=()=>{ if(el.checked) set(w.buttonValue); }; }
+      const s=Math.min(W,H)*0.86; x+=(W-s)/2; y+=(H-s)/2; W=H=s;
+    } else if(w.fieldType==="Ch"){
+      el=document.createElement("select");
+      if(!w.combo){ el.size=Math.max(2,Math.floor(H/(13*z))); if(w.multiSelect) el.multiple=true; }
+      CH_DISPLAY[key]=CH_DISPLAY[key]||{};
+      (w.options||[]).forEach(o=>{ const op=document.createElement("option"); op.value=o.exportValue; op.textContent=o.displayValue; el.appendChild(op);
+        CH_DISPLAY[key][o.exportValue]=o.displayValue; });
+      const vals=(Array.isArray(v)?v:[v]).map(String);
+      [...el.options].forEach(o=>o.selected=vals.includes(o.value)||vals.includes(o.textContent));
+      if(w.combo && !vals.some(Boolean)) el.selectedIndex=-1;
+      el.style.fontSize=Math.max(8,Math.min(H*0.62, 12*z))+"px";
+      el.onchange=()=>{ const sel=[...el.selectedOptions].map(o=>o.value); set(el.multiple?sel:(sel[0]||"")); };
+    } else return;
+    el.className="fld"; el.dataset.fk=key; el.title=w.alternativeText||w.fieldName;
+    el.style.left=x+"px"; el.style.top=y+"px"; el.style.width=W+"px"; el.style.height=H+"px";
+    if(w.readOnly) el.disabled=true;
+    el.addEventListener("mousedown", e=>e.stopPropagation());   // don't start a tool or hand-pan
+    ov.appendChild(el);
+  });
+}
+async function toggleFieldHighlight(){
+  const d=activeDoc(); if(!d) return;
+  S.hlFields=!S.hlFields; lsSet("tt_hlfields", S.hlFields?"1":"0");
+  const v=$("#viewer"); if(v) v.classList.toggle("hlf",S.hlFields);
+  $$('[data-act="hlFields"]').forEach(b=>b.classList.toggle("on",S.hlFields));
+  if(!S.hlFields){ toast("Field highlighting off."); return; }
+  let n=0; for(const pg of d.pages){ if(!pg.blank) n+=fillWidgets(await pageAnnots(d.sources[pg.s], pg.p)).length; }
+  toast(n ? `${n} fillable field${n>1?"s":""} highlighted — click one to fill it in.` : "This PDF has no fillable form fields. Use Add Text, Check and Date to fill it like paper.");
+}
+function applyFormValues(doc, libSrcs){
+  const keys=Object.keys(doc.form||{}); if(!keys.length) return;
+  const L=PDFLib;
+  libSrcs.forEach((lib,s)=>{
+    const mine=keys.filter(k=>k.startsWith(s+"|")); if(!mine.length) return;
+    let form; try{ form=lib.getForm(); }catch(e){ console.warn("no form", e); return; }
+    mine.forEach(k=>{
+      const name=k.slice(k.indexOf("|")+1), v=doc.form[k];
+      try{
+        const f=form.getField(name);
+        if(f instanceof L.PDFTextField) f.setText(v==null?"":String(v));
+        else if(f instanceof L.PDFCheckBox){ (v && v!=="Off") ? f.check() : f.uncheck(); }
+        else if(f instanceof L.PDFRadioGroup){
+          if(!v || v==="Off"){ f.clear(); return; }
+          const opts=f.getOptions(), sv=String(v);
+          if(opts.includes(sv)){ f.select(sv); return; }
+          // Appearance-state names (e.g. "0","1") can differ from option labels — match by widget.
+          const ws=f.acroField.getWidgets();
+          const i=ws.findIndex(w=>{ const on=w.getOnValue&&w.getOnValue(); return on && on.decodeText()===sv; });
+          if(i>=0 && opts[i]!=null) f.select(opts[i]); else if(/^\d+$/.test(sv) && opts[+sv]!=null) f.select(opts[+sv]);
+        }
+        else if(f instanceof L.PDFDropdown || f instanceof L.PDFOptionList){
+          const vals=(Array.isArray(v)?v:[v]).filter(x=>x!=null&&x!=="").map(String);
+          if(!vals.length){ f.clear(); return; }
+          const opts=f.getOptions(), disp=CH_DISPLAY[k]||{};
+          const pick=vals.map(x=>opts.includes(x)?x:(disp[x]&&opts.includes(disp[x])?disp[x]:x));
+          f.select(f instanceof L.PDFDropdown ? pick[0] : pick);
+        }
+      }catch(e){ console.warn("form field not set:", name, e); }
+    });
+    try{ form.updateFieldAppearances(); }catch(e){ console.warn("field appearance update failed", e); }
+  });
+}
+// copyPages copies widgets but not the document's field list — rebuild it so the saved PDF stays fillable.
+function rebuildAcroForm(out, libSrcs){
+  const {PDFName,PDFDict,PDFRef,PDFArray,PDFObjectCopier}=PDFLib, ctx=out.context;
+  const roots=new Set(), W=PDFName.of("Widget"), PAR=PDFName.of("Parent"), SUB=PDFName.of("Subtype");
+  out.getPages().forEach(p=>{ const arr=p.node.Annots(); if(!arr) return;
+    for(let i=0;i<arr.size();i++){ const r=arr.get(i); if(!(r instanceof PDFRef)) continue;
+      const d=ctx.lookup(r); if(!(d instanceof PDFDict) || d.get(SUB)!==W) continue;
+      let ref=r, dict=d, guard=0;
+      while(guard++<32){ const pr=dict.get(PAR); if(!(pr instanceof PDFRef)) break; ref=pr; dict=ctx.lookup(pr); if(!(dict instanceof PDFDict)) break; }
+      roots.add(ref); } });
+  if(!roots.size) return;
+  const existing=out.catalog.lookupMaybe(PDFName.of("AcroForm"), PDFDict);
+  const af=ctx.obj({ Fields:[...roots] });
+  if(existing){ ["DR","DA","Q"].forEach(k=>{ const v=existing.get(PDFName.of(k)); if(v) af.set(PDFName.of(k), v); }); }
+  else for(const lib of libSrcs){
+    const src=lib.catalog.lookupMaybe(PDFName.of("AcroForm"), PDFDict); if(!src) continue;
+    const cp=PDFObjectCopier.for(lib.context, ctx);
+    ["DR","DA","Q"].forEach(k=>{ const v=src.get(PDFName.of(k)); if(v) af.set(PDFName.of(k), cp.copy(v)); });
+    break;
+  }
+  out.catalog.set(PDFName.of("AcroForm"), ctx.register(af));
+}
+
+/* ── writing comments into the PDF ── */
+const n3=v=>Math.round(v*1000)/1000;
+function pdfDate(iso){ const d=iso?new Date(iso):new Date(), p=n=>String(n).padStart(2,"0");
+  return `D:${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
+function svgPathPDF(P, closed){ return "M"+P.map(([x,y])=>`${n3(x)} ${n3(-y)}`).join(" L")+(closed?" Z":""); }
+function drawPathPDF(page,R,pw,ph,pts,closed,color,sw){
+  if(!pts||pts.length<2) return;
+  const P=pts.map(([x,y])=>ptMap(R,pw,ph,x,y));
+  page.drawSvgPath(svgPathPDF(P,closed),{ x:0, y:0, borderColor:color, borderWidth:sw, borderLineCap:PDFLib.LineCapStyle.Round });
+}
+// Draw an image so it appears upright in display space, whatever the page rotation.
+function drawImageDisp(page,R,pw,ph,img,x,y,w,h){
+  const O=ptMap(R,pw,ph,x,y+h), U=ptMap(R,pw,ph,x+w,y+h), V=ptMap(R,pw,ph,x,y);
+  const key="TTIm"+Math.random().toString(36).slice(2,9);
+  page.node.setXObject(PDFLib.PDFName.of(key), img.ref);
+  page.pushOperators(PDFLib.pushGraphicsState(),
+    PDFLib.concatTransformationMatrix(U[0]-O[0],U[1]-O[1],V[0]-O[0],V[1]-O[1],O[0],O[1]),
+    PDFLib.drawObject(key), PDFLib.popGraphicsState());
+}
+const noteGeom=a=>({ shape:NOTE_SHAPE.map(([u,v])=>[a.x+u*a.w/22, a.y+v*a.h/22]),
+  lines:NOTE_LINES.map(([p,q])=>[[a.x+p[0]*a.w/22, a.y+p[1]*a.h/22],[a.x+q[0]*a.w/22, a.y+q[1]*a.h/22]]) });
+async function flattenComment(out, page, R, pw, ph, a){
+  const M=p=>ptMap(R,pw,ph,p[0],p[1]);
+  if(MARKUP.has(a.t)){
+    const g=markupGeom(a), [r,gg,b]=hex2rgb(a.color||MARK_COLOR[a.t]), col=rgb(r,gg,b);
+    g.fills.forEach(f=>page.drawSvgPath(svgPathPDF(f.map(M),true),{ x:0, y:0, color:col, opacity:.42, blendMode:BlendMode.Multiply }));
+    g.lines.forEach(([p,q,lw])=>{ const A=M(p), B=M(q); page.drawLine({ start:{x:A[0],y:A[1]}, end:{x:B[0],y:B[1]}, thickness:lw, color:col }); });
+    g.zigs.forEach(([pts,lw])=>drawPathPDF(page,R,pw,ph,pts,false,col,lw));
+    return;
+  }
+  if(a.t==="stamp"){ const img=await out.embedPng(await fetch(a.dataUrl).then(r=>r.arrayBuffer()));
+    drawImageDisp(page,R,pw,ph,img,a.x,a.y,a.w,a.h); return; }
+  if(a.t==="note"){ const g=noteGeom(a), [r,gg,b]=hex2rgb(a.color||"#ffd43b");
+    page.drawSvgPath(svgPathPDF(g.shape.map(M),true),{ x:0, y:0, color:rgb(r,gg,b), borderColor:rgb(.42,.34,0), borderWidth:.8 });
+    g.lines.forEach(([p,q])=>{ const A=M(p), B=M(q); page.drawLine({ start:{x:A[0],y:A[1]}, end:{x:B[0],y:B[1]}, thickness:1, color:rgb(.42,.34,0) }); }); }
+}
+async function writeCommentAnnot(out, page, R, pw, ph, a){
+  const {PDFName,PDFHexString,PDFString}=PDFLib, ctx=out.context, M=p=>ptMap(R,pw,ph,p[0],p[1]);
+  const [cr,cg,cb]=hex2rgb(a.color||MARK_COLOR[a.t]||"#ffd43b");
+  const bboxOf=P=>{ const xs=P.map(p=>p[0]), ys=P.map(p=>p[1]);
+    return [n3(Math.min(...xs)-1), n3(Math.min(...ys)-1), n3(Math.max(...xs)+1), n3(Math.max(...ys)+1)]; };
+  const pathOps=(P,closed)=>`${n3(P[0][0])} ${n3(P[0][1])} m `+P.slice(1).map(p=>`${n3(p[0])} ${n3(p[1])} l`).join(" ")+(closed?" h":"");
+  let subtype, rect, ops, res={}, extra={};
+  if(MARKUP.has(a.t)){
+    const g=markupGeom(a), qp=[], all=[];
+    g.quads.forEach(q=>q.forEach(p=>{ const m=M(p); qp.push(n3(m[0]),n3(m[1])); all.push(m); }));
+    g.zigs.forEach(([pts])=>pts.forEach(p=>all.push(M(p))));
+    rect=bboxOf(all); extra.QuadPoints=qp;
+    subtype={hl:"Highlight",under:"Underline",strike:"StrikeOut",squig:"Squiggly"}[a.t];
+    if(a.t==="hl"){ res={ ExtGState:{ G0:{ Type:"ExtGState", CA:.42, ca:.42, BM:"Multiply" } } };
+      ops=`/G0 gs ${cr} ${cg} ${cb} rg `+g.fills.map(f=>pathOps(f.map(M),true)+" f").join(" "); }
+    else ops=`${cr} ${cg} ${cb} RG 1 J 1 j `+
+      g.lines.map(([p,q,lw])=>`${n3(lw)} w `+pathOps([M(p),M(q)],false)+" S").join(" ")+" "+
+      g.zigs.map(([pts,lw])=>`${n3(lw)} w `+pathOps(pts.map(M),false)+" S").join(" ");
+  } else if(a.t==="note"){
+    const g=noteGeom(a); subtype="Text"; rect=bboxOf(g.shape.map(M)); extra.Name=PDFName.of("Comment");
+    ops=`${cr} ${cg} ${cb} rg 0.42 0.34 0 RG 0.8 w 1 j `+pathOps(g.shape.map(M),true)+" B 1 w "+
+      g.lines.map(([p,q])=>pathOps([M(p),M(q)],false)+" S").join(" ");
+  } else if(a.t==="stamp"){
+    const img=await out.embedPng(await fetch(a.dataUrl).then(r=>r.arrayBuffer()));
+    const O=M([a.x,a.y+a.h]), U=M([a.x+a.w,a.y+a.h]), V=M([a.x,a.y]);
+    subtype="Stamp"; rect=bboxOf([O,U,V,M([a.x+a.w,a.y])]); res={ XObject:{ Im0:img.ref } };
+    extra.Name=PDFName.of("TT"+String(a.label||"Custom").replace(/[^A-Za-z0-9]/g,"")||"TTCustom");
+    ops=`${n3(U[0]-O[0])} ${n3(U[1]-O[1])} ${n3(V[0]-O[0])} ${n3(V[1]-O[1])} ${n3(O[0])} ${n3(O[1])} cm /Im0 Do`;
+  } else return;
+  const ap=ctx.register(ctx.stream(`q ${ops} Q`, { Type:"XObject", Subtype:"Form", BBox:rect, Resources:res }));
+  const who=PDFHexString.fromText(a.author||author());
+  const o={ Type:"Annot", Subtype:subtype, Rect:rect, F:4, C:[cr,cg,cb], T:who,
+    M:PDFString.of(pdfDate(a.edited||a.date)), CreationDate:PDFString.of(pdfDate(a.date)),
+    NM:PDFString.of(`tt-${a.id}-${Date.now().toString(36)}`), AP:{ N:ap }, ...extra };
+  if(a.cm) o.Contents=PDFHexString.fromText(a.cm);
+  if(a.t!=="note" && a.quote && !a.cm) o.Contents=PDFHexString.fromText(a.quote);
+  const ref=ctx.register(ctx.obj(o)); page.node.addAnnot(ref);
+  (a.replies||[]).forEach((rp,i)=>{
+    page.node.addAnnot(ctx.register(ctx.obj({ Type:"Annot", Subtype:"Text", Rect:rect, F:28, IRT:ref, RT:PDFName.of("R"),
+      Name:PDFName.of("Comment"), C:[cr,cg,cb], T:PDFHexString.fromText(rp.author||""), Contents:PDFHexString.fromText(rp.text||""),
+      M:PDFString.of(pdfDate(rp.date)), NM:PDFString.of(`tt-${a.id}-r${i}-${Date.now().toString(36)}`) })));
+  });
+}
+
 async function boot(){
-  renderTabs(); renderActive(); setTool("hand");
+  renderTabs(); renderActive(); setTool("hand"); setFlatten(S.flatten);
+  $$('[data-act="hlFields"]').forEach(b=>b.classList.toggle("on",S.hlFields));
   try{ await idbOpen(); }
   catch(e){ persistOK=false; bootReady=true; setSaved("off");
     console.info("Auto-save disabled (no IndexedDB here). It will work on your deployed site."); return; }
